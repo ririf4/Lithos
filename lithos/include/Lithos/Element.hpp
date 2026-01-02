@@ -12,6 +12,7 @@ class SkCanvas;
 namespace Lithos {
     class LITHOS_API Element {
     public:
+        Element() = default;
         virtual ~Element() = default;
         virtual void Draw(SkCanvas* canvas) const = 0;
 

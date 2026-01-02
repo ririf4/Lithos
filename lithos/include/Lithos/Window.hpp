@@ -2,6 +2,8 @@
 #include <string>
 #include <memory>
 
+#include "Layer.hpp"
+
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
 #else
@@ -16,6 +18,8 @@ namespace Lithos {
 
         void Show() const;
         void RunMessageLoop() const;
+
+        void AddLayer(std::unique_ptr<Layer> layer) const;  // 追加
 
     private:
         struct Impl;

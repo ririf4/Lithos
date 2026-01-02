@@ -9,6 +9,7 @@ add_library(Lithos SHARED
         lithos/src/Lithos/Window.cpp
         lithos/src/Lithos/Layer.cpp
 
+        lithos/src/Lithos/Element.cpp
         lithos/src/Lithos/Elements/RectElements.cpp
 )
 
@@ -23,6 +24,8 @@ target_include_directories(Lithos PUBLIC lithos/include)
 
 add_compile_definitions(UNICODE _UNICODE)
 
+target_compile_definitions(Lithos PRIVATE LITHOS_EXPORTS)
+
 if(MSVC)
     target_compile_options(Lithos PRIVATE /utf-8)
 endif()
@@ -34,4 +37,7 @@ set_target_properties(LithosTest PROPERTIES
         LINK_FLAGS "/ENTRY:mainCRTStartup"
 )
 
-target_link_libraries(LithosTest PRIVATE Lithos)
+target_link_libraries(LithosTest PRIVATE
+        Lithos
+        unofficial::skia::skia  # 追加
+)

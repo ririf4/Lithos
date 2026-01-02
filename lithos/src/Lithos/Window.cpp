@@ -1,10 +1,12 @@
 #include "Lithos/Window.hpp"
+#include "Lithos/Layer.hpp"
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
 #include <windows.h>
+#include <vector>
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 
@@ -19,7 +21,7 @@ namespace Lithos {
                 static_cast<int>(utf8.size()),
                 nullptr,
                 0
-                );
+            );
             std::wstring wstrTo(size_needed, 0);
             MultiByteToWideChar(
                 CP_UTF8,
@@ -28,7 +30,7 @@ namespace Lithos {
                 static_cast<int>(utf8.size()),
                 wstrTo.data(),
                 size_needed
-                );
+            );
             return wstrTo;
         }
     }
@@ -37,6 +39,7 @@ namespace Lithos {
         HWND hwnd = nullptr;
         sk_sp<SkSurface> surface;
         int width{}, height{};
+        std::vector<std::unique_ptr<Layer>> layers;  // 追加
 
         static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
             Impl* pImpl = nullptr;
@@ -45,7 +48,9 @@ namespace Lithos {
                 pImpl = static_cast<Impl*>(cs->lpCreateParams);
                 SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pImpl));
             }
-            else { pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA)); }
+            else {
+                pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
+            }
 
             if (pImpl) {
                 switch (message) {
@@ -63,11 +68,11 @@ namespace Lithos {
 
         void OnPaint() const {
             SkCanvas* canvas = surface->getCanvas();
+            canvas->clear(SK_ColorWHITE);
 
-            canvas->clear(SK_ColorDKGRAY);
-            SkPaint paint;
-            paint.setColor(SK_ColorCYAN);
-            canvas->drawCircle(100, 100, 50, paint);
+            for (const auto& layer : layers) {
+                layer->Draw(canvas);
+            }
 
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
@@ -90,7 +95,8 @@ namespace Lithos {
         }
     };
 
-    Window::Window(const int width, const int height, const std::string& title) : pimpl(std::make_unique<Impl>()) {
+    Window::Window(const int width, const int height, const std::string& title)
+        : pimpl(std::make_unique<Impl>()) {
         pimpl->width = width;
         pimpl->height = height;
 
@@ -121,13 +127,17 @@ namespace Lithos {
         pimpl->surface = SkSurfaces::Raster(info);
     }
 
+    void Window::AddLayer(std::unique_ptr<Layer> layer) const {
+        pimpl->layers.push_back(std::move(layer));
+    }
+
     void Window::Show() const { ShowWindow(pimpl->hwnd, SW_SHOW); }
 
     void Window::RunMessageLoop() const {
         MSG msg;
         while (GetMessage(&msg, nullptr, 0, 0)) {
             TranslateMessage(&msg);
-            DispatchMessage(&msg); // これが WndProc を呼び出す
+            DispatchMessage(&msg);
         }
     }
 

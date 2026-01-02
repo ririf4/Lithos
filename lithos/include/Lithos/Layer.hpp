@@ -17,7 +17,6 @@ namespace Lithos {
         Multiply,
         Screen,
         Overlay
-        // TODO: Add more?
     };
 
     class LITHOS_API Layer {
@@ -25,10 +24,16 @@ namespace Lithos {
         Layer();
         ~Layer();
 
-        void SetTransparent(bool value);
-        [[nodiscard]]bool IsTransparent() const;
+        Layer(const Layer&) = delete;
+        Layer& operator=(const Layer&) = delete;
 
-        void SetOpacity(float value);  // 0.0 ~ 1.0
+        Layer(Layer&&) = default;
+        Layer& operator=(Layer&&) = default;
+
+        void SetTransparent(bool value);
+        [[nodiscard]] bool IsTransparent() const;
+
+        void SetOpacity(float value);
         [[nodiscard]] float GetOpacity() const;
 
         void SetBlendMode(BlendMode mode);
