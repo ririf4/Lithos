@@ -1,0 +1,37 @@
+cmake_minimum_required(VERSION 4.1)
+project(Lithos)
+
+set(CMAKE_CXX_STANDARD 23)
+
+find_package(unofficial-skia CONFIG REQUIRED)
+
+add_library(Lithos SHARED
+        lithos/src/Lithos/Window.cpp
+        lithos/src/Lithos/Layer.cpp
+
+        lithos/src/Lithos/Elements/RectElements.cpp
+)
+
+target_link_libraries(Lithos PRIVATE
+        unofficial::skia::skia
+        user32.lib
+        gdi32.lib
+        shell32.lib
+)
+
+target_include_directories(Lithos PUBLIC lithos/include)
+
+add_compile_definitions(UNICODE _UNICODE)
+
+if(MSVC)
+    target_compile_options(Lithos PRIVATE /utf-8)
+endif()
+
+# >==================== Example Application =================<
+add_executable(LithosTest example/main.cpp)
+
+set_target_properties(LithosTest PROPERTIES
+        LINK_FLAGS "/ENTRY:mainCRTStartup"
+)
+
+target_link_libraries(LithosTest PRIVATE Lithos)
