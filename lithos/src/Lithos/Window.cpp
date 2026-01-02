@@ -39,7 +39,7 @@ namespace Lithos {
         HWND hwnd = nullptr;
         sk_sp<SkSurface> surface;
         int width{}, height{};
-        std::vector<std::unique_ptr<Layer>> layers;  // 追加
+        std::vector<std::unique_ptr<Layer>> layers;
 
         static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
             Impl* pImpl = nullptr;
@@ -48,9 +48,7 @@ namespace Lithos {
                 pImpl = static_cast<Impl*>(cs->lpCreateParams);
                 SetWindowLongPtr(hWnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pImpl));
             }
-            else {
-                pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA));
-            }
+            else { pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hWnd, GWLP_USERDATA)); }
 
             if (pImpl) {
                 switch (message) {
@@ -58,9 +56,95 @@ namespace Lithos {
                     pImpl->OnPaint();
                     return 0;
                 }
-                case WM_DESTROY:
+
+                case WM_LBUTTONDOWN: {
+                    Event evt;
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Left;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_LBUTTONUP: {
+                    Event evt;
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Left;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_RBUTTONDOWN: {
+                    Event evt;
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Right;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_RBUTTONUP: {
+                    Event evt;
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Right;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_MBUTTONDOWN: {
+                    Event evt;
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Middle;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_MBUTTONUP: {
+                    Event evt;
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Middle;
+                    evt.mouseX = LOWORD(lParam);
+                    evt.mouseY = HIWORD(lParam);
+
+                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
+                    return 0;
+                }
+
+                case WM_SIZE: {
+                    pImpl->width = LOWORD(lParam);
+                    pImpl->height = HIWORD(lParam);
+
+                    Event evt;
+                    evt.type = EventType::WindowResize;
+                    evt.windowWidth = pImpl->width;
+                    evt.windowHeight = pImpl->height;
+
+                    for (const auto& layer : pImpl->layers) { layer->HandleEvent(evt); }
+
+                    const SkImageInfo info = SkImageInfo::MakeN32Premul(pImpl->width, pImpl->height);
+                    pImpl->surface = SkSurfaces::Raster(info);
+
+                    InvalidateRect(hWnd, nullptr, FALSE);
+                    return 0;
+                }
+
+                case WM_DESTROY: {
                     PostQuitMessage(0);
                     return 0;
+                }
                 }
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -70,9 +154,7 @@ namespace Lithos {
             SkCanvas* canvas = surface->getCanvas();
             canvas->clear(SK_ColorWHITE);
 
-            for (const auto& layer : layers) {
-                layer->Draw(canvas);
-            }
+            for (const auto& layer : layers) { layer->Draw(canvas); }
 
             PAINTSTRUCT ps;
             HDC hdc = BeginPaint(hwnd, &ps);
@@ -95,8 +177,7 @@ namespace Lithos {
         }
     };
 
-    Window::Window(const int width, const int height, const std::string& title)
-        : pimpl(std::make_unique<Impl>()) {
+    Window::Window(const int width, const int height, const std::string& title) : pimpl(std::make_unique<Impl>()) {
         pimpl->width = width;
         pimpl->height = height;
 
@@ -127,9 +208,7 @@ namespace Lithos {
         pimpl->surface = SkSurfaces::Raster(info);
     }
 
-    void Window::AddLayer(std::unique_ptr<Layer> layer) const {
-        pimpl->layers.push_back(std::move(layer));
-    }
+    void Window::AddLayer(std::unique_ptr<Layer> layer) const { pimpl->layers.push_back(std::move(layer)); }
 
     void Window::Show() const { ShowWindow(pimpl->hwnd, SW_SHOW); }
 

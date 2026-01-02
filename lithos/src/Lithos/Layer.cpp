@@ -44,6 +44,20 @@ namespace Lithos {
         return elements;
     }
 
+    bool Layer::HandleEvent(const Event& event) {
+        if (!transparent && opacity <= 0.0f) {
+            return false;
+        }
+
+        for (auto it = elements.rbegin(); it != elements.rend(); ++it) {
+            if ((*it)->OnEvent(event)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     void Layer::Draw(SkCanvas* canvas) const {
         if (!transparent && opacity <= 0.0f) {
             return;

@@ -6,11 +6,20 @@ set(CMAKE_CXX_STANDARD 23)
 find_package(unofficial-skia CONFIG REQUIRED)
 
 add_library(Lithos SHARED
+        # HPP Header Files
+        lithos/include/Lithos/Window.hpp
+        lithos/include/Lithos/Layer.hpp
+        lithos/include/Lithos/Element.hpp
+        lithos/include/Lithos/Event.hpp
+
+        lithos/include/Lithos/Elements/RectElement.hpp
+
+        # CPP Source Files
         lithos/src/Lithos/Window.cpp
         lithos/src/Lithos/Layer.cpp
-
         lithos/src/Lithos/Element.cpp
-        lithos/src/Lithos/Elements/RectElements.cpp
+
+        lithos/src/Lithos/Elements/RectElement.cpp
 )
 
 target_link_libraries(Lithos PRIVATE

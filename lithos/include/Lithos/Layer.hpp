@@ -42,6 +42,8 @@ namespace Lithos {
         void AddElement(std::unique_ptr<Element> element);
         [[nodiscard]] const std::vector<std::unique_ptr<Element>>& GetElements() const;
 
+        bool HandleEvent(const Event& event);
+
         void Draw(SkCanvas* canvas) const;
 
     private:
