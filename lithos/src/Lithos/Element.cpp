@@ -69,7 +69,6 @@ namespace Lithos {
                 clickUpCallback(this, event.button);
                 return true;
             }
-            return false;
         }
 
         // MouseMove

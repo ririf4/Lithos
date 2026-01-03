@@ -39,8 +39,6 @@ namespace Lithos {
     void RectElement::Draw(SkCanvas* canvas) const {
         if (!visible) return;
 
-        std::cout << "Drawing rect: " << width << "x" << height << std::endl;
-
         SkPaint paint;
         paint.setColor(color);
         paint.setAntiAlias(true);

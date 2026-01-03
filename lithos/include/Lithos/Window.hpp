@@ -35,7 +35,7 @@ namespace Lithos {
             void Show() const;
             void RunMessageLoop() const;
 
-            void AddPanel(std::unique_ptr<Panel> panel) const;
+            void AddPanel(std::unique_ptr<Panel> panel);
 
         private:
             struct Impl;

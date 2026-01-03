@@ -239,7 +239,7 @@ namespace Lithos {
         pimpl->surface = SkSurfaces::Raster(info);
     }
 
-    void Window::AddPanel(std::unique_ptr<Panel> panel) const { pimpl->panels.push_back(std::move(panel)); }
+    void Window::AddPanel(std::unique_ptr<Panel> panel) { pimpl->panels.push_back(std::move(panel)); }
 
     void Window::Show() const { ShowWindow(pimpl->hwnd, SW_SHOW); }
 
