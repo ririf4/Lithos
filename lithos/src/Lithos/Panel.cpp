@@ -110,18 +110,72 @@ namespace Lithos {
         canvas->restore();
     }
 
+    void Panel::OnResize(const std::function<void(Panel*, int, int)>& callback) { resizeCallback = callback; }
+
+    void Panel::OnClickDown(const std::function<void(Panel*, MouseButton)>& callback) { clickDownCallback = callback; }
+
+    void Panel::OnClickUp(const std::function<void(Panel*, MouseButton)>& callback) { clickUpCallback = callback; }
+
+    void Panel::OnMouseMove(const std::function<void(Panel*, int, int)>& callback) { mouseMoveCallback = callback; }
+
+    void Panel::OnKeyDown(const std::function<void(Panel*, int)>& callback) { keyDownCallback = callback; }
+
+    void Panel::OnKeyUp(const std::function<void(Panel*, int)>& callback) { keyUpCallback = callback; }
+
     bool Panel::HandleEvent(const Event& event) {
-        if (event.type == EventType::MouseDown || event.type == EventType::MouseUp || event.type == EventType::MouseMove) {
-            if (event.mouseX < x || event.mouseX > x + width || event.mouseY < y || event.mouseY > y + height) { return false; }
+        // WindowResizeイベント
+        if (event.type == EventType::WindowResize) {
+            if (resizeCallback) {
+                resizeCallback(this, event.windowWidth, event.windowHeight);
+            }
+            // 全Elementに伝播（常に）
+            for (int i = static_cast<int>(layers.size()) - 1; i >= 0; --i) {
+                auto& elements = layerElements[i];
+                for (const auto& element : elements) {
+                    element->OnEvent(event);
+                }
+            }
+            return false;  // 他のPanelにも伝播
         }
 
+        // マウスイベントのバウンダリチェック
+        if (event.type == EventType::MouseDown || event.type == EventType::MouseUp ||
+            event.type == EventType::MouseMove) {
+            if (event.mouseX < x || event.mouseX > x + width ||
+                event.mouseY < y || event.mouseY > y + height) {
+                return false;
+                }
+            }
+
+        // Panelレベルのコールバック（監視のみ、消費しない）
+        if (keyDownCallback && event.type == EventType::KeyDown) {
+            keyDownCallback(this, event.key);
+        }
+        if (keyUpCallback && event.type == EventType::KeyUp) {
+            keyUpCallback(this, event.key);
+        }
+        if (clickDownCallback && event.type == EventType::MouseDown) {
+            clickDownCallback(this, event.button);
+        }
+        if (clickUpCallback && event.type == EventType::MouseUp) {
+            clickUpCallback(this, event.button);
+        }
+        if (mouseMoveCallback && event.type == EventType::MouseMove) {
+            mouseMoveCallback(this, event.mouseX, event.mouseY);
+        }
+
+        // Elementへ伝播（ローカル座標）
         Event localEvent = event;
         localEvent.mouseX -= static_cast<int>(x);
         localEvent.mouseY -= static_cast<int>(y);
 
         for (int i = static_cast<int>(layers.size()) - 1; i >= 0; --i) {
             auto& elements = layerElements[i];
-            for (auto it = elements.rbegin(); it != elements.rend(); ++it) { if ((*it)->OnEvent(localEvent)) { return true; } }
+            for (auto it = elements.rbegin(); it != elements.rend(); ++it) {
+                if ((*it)->OnEvent(localEvent)) {
+                    return true;  // Elementが消費したら終了
+                }
+            }
         }
 
         return false;

@@ -1,3 +1,6 @@
+#include <iostream>
+#include <ostream>
+
 #include "Lithos/Window.hpp"
 #include "Lithos/Panel.hpp"
 #include "Lithos/Layer.hpp"
@@ -8,6 +11,7 @@ int main() {
 
     // Panel作成
     auto panel = std::make_unique<Lithos::Panel>(0, 0, 800, 600);
+    panel->OnResize([](Lithos::Panel* panel, int w, int h) { panel->SetSize(w, h); });
 
     // Layer作成
     size_t bgLayer = panel->AddLayer(std::make_unique<Lithos::Layer>("background"));
@@ -15,9 +19,7 @@ int main() {
 
     // 背景
     auto bg = std::make_unique<Lithos::RectElement>(0, 0, 800, 600, SK_ColorDKGRAY);
-    bg->OnResize([](Lithos::Element* elem, int w, int h) {
-        elem->SetSize(w, h);
-    });
+    bg->OnResize([](Lithos::Element* elem, int w, int h) { elem->SetSize(w, h); });
     panel->AddElement(std::move(bg), bgLayer);
 
     // 赤い矩形

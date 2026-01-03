@@ -8,7 +8,7 @@ namespace Lithos {
         public:
             RectElement();
             RectElement(float x, float y, float width, float height, SkColor color);
-            ~RectElement() override = default;
+            virtual ~RectElement() = default;
 
             void Draw(SkCanvas* canvas) const override;
 

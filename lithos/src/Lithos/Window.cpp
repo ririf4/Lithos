@@ -7,6 +7,7 @@
 #define NOMINMAX
 #endif
 
+#include <iostream>
 #include <vector>
 #include <windows.h>
 #include "include/core/SkCanvas.h"
@@ -173,14 +174,10 @@ namespace Lithos {
 
                 StretchDIBits(
                     hdc,
-                    0,
-                    0,
-                    pixmap.width(),
-                    pixmap.height(),
-                    0,
-                    0,
-                    pixmap.width(),
-                    pixmap.height(),
+                    0, 0,
+                    pixmap.width(), pixmap.height(),
+                    0, 0,
+                    pixmap.width(), pixmap.height(),
                     pixmap.addr(),
                     &bmi,
                     DIB_RGB_COLORS,
@@ -193,6 +190,9 @@ namespace Lithos {
 
     Window::Window(const int width, const int height, const std::string& title)
         : pimpl(std::make_unique<Impl>()) {
+
+        SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+
         pimpl->width = width;
         pimpl->height = height;
 

@@ -1,5 +1,8 @@
 // Elements/RectElement.cpp
 #include "Lithos/Elements/RectElement.hpp"
+
+#include <iostream>
+
 #include "include/core/SkCanvas.h"
 #include "include/core/SkPaint.h"
 #include "include/core/SkRRect.h"
@@ -19,6 +22,8 @@ namespace Lithos {
 
     void RectElement::Draw(SkCanvas* canvas) const {
         if (!visible) return;
+
+        std::cout << "Drawing rect: " << width << "x" << height << std::endl;
 
         SkPaint paint;
         paint.setColor(color);

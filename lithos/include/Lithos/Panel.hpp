@@ -47,9 +47,23 @@ namespace Lithos {
             void Draw(SkCanvas* canvas) const;
             bool HandleEvent(const Event& event);
 
+            void OnResize(const std::function<void(Panel*, int, int)>& callback);
+            void OnClickDown(const std::function<void(Panel*, MouseButton)>& callback);
+            void OnClickUp(const std::function<void(Panel*, MouseButton)>& callback);
+            void OnMouseMove(const std::function<void(Panel*, int, int)>& callback);
+            void OnKeyDown(const std::function<void(Panel*, int)>& callback);
+            void OnKeyUp(const std::function<void(Panel*, int)>& callback);
+
         private:
             float x, y, width, height;
             std::vector<std::unique_ptr<Layer>> layers;
-            std::vector<std::vector<std::unique_ptr<Element>>> layerElements;  // Layer毎のElement配列
+            std::vector<std::vector<std::unique_ptr<Element>>> layerElements;
+
+            std::function<void(Panel*, int, int)> resizeCallback;
+            std::function<void(Panel*, MouseButton)> clickDownCallback;
+            std::function<void(Panel*, MouseButton)> clickUpCallback;
+            std::function<void(Panel*, int, int)> mouseMoveCallback;
+            std::function<void(Panel*, int)> keyDownCallback;
+            std::function<void(Panel*, int)> keyUpCallback;
     };
 }
