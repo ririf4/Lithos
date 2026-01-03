@@ -15,10 +15,8 @@
  */
 
 #pragma once
-#include <memory>
-#include <string>
-
-#include "Panel.hpp"
+#include <include/core/SkColor.h>
+#include "Lithos/Element.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -27,18 +25,24 @@
 #endif
 
 namespace Lithos {
-    class LITHOS_API Window {
+    class LITHOS_API CircleElement : public Element {
         public:
-            Window(int width, int height, const std::string& title);
-            ~Window();
+            CircleElement();
+            CircleElement(float centerX, float centerY, float radius, SkColor color);
+            virtual ~CircleElement() = default;
 
-            void Show() const;
-            void RunMessageLoop() const;
+            void Draw(SkCanvas* canvas) const override;
 
-            void AddPanel(std::unique_ptr<Panel> panel) const;
+            void SetColor(SkColor color);
+            SkColor GetColor() const { return color; }
+
+            void SetRadius(float radius);
+            float GetRadius() const { return radius; }
+
+            void SetCenter(float centerX, float centerY);
 
         private:
-            struct Impl;
-            std::unique_ptr<Impl> pimpl;
+            SkColor color;
+            float radius;
     };
 }

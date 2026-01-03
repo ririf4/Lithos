@@ -15,6 +15,8 @@ add_library(Lithos SHARED
         lithos/include/Lithos/Event.hpp
 
         lithos/include/Lithos/Elements/RectElement.hpp
+        lithos/include/Lithos/Elements/CircleElement.hpp
+        lithos/include/Lithos/Elements/TextElement.hpp
 
         # CPP Source Files
         lithos/src/Lithos/Window.cpp
@@ -23,6 +25,8 @@ add_library(Lithos SHARED
         lithos/src/Lithos/Element.cpp
 
         lithos/src/Lithos/Elements/RectElement.cpp
+        lithos/src/Lithos/Elements/CircleElement.cpp
+        lithos/src/Lithos/Elements/TextElement.cpp
 )
 
 target_link_libraries(Lithos PRIVATE

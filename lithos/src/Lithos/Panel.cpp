@@ -1,3 +1,19 @@
+/*
+    Copyright 2026 RiriFa
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+ */
+
 // Panel.cpp
 #include "Lithos/Panel.hpp"
 #include <algorithm>
@@ -123,31 +139,25 @@ namespace Lithos {
     void Panel::OnKeyUp(const std::function<void(Panel*, int)>& callback) { keyUpCallback = callback; }
 
     bool Panel::HandleEvent(const Event& event) {
-        // WindowResizeイベント
         if (event.type == EventType::WindowResize) {
             if (resizeCallback) {
                 resizeCallback(this, event.windowWidth, event.windowHeight);
             }
-            // 全Elementに伝播（常に）
             for (int i = static_cast<int>(layers.size()) - 1; i >= 0; --i) {
                 auto& elements = layerElements[i];
                 for (const auto& element : elements) {
                     element->OnEvent(event);
                 }
             }
-            return false;  // 他のPanelにも伝播
+            return false;
         }
 
-        // マウスイベントのバウンダリチェック
-        if (event.type == EventType::MouseDown || event.type == EventType::MouseUp ||
-            event.type == EventType::MouseMove) {
-            if (event.mouseX < x || event.mouseX > x + width ||
-                event.mouseY < y || event.mouseY > y + height) {
+        if (event.type == EventType::MouseDown || event.type == EventType::MouseUp || event.type == EventType::MouseMove) {
+            if (event.mouseX < x || event.mouseX > x + width || event.mouseY < y || event.mouseY > y + height) {
                 return false;
-                }
             }
+        }
 
-        // Panelレベルのコールバック（監視のみ、消費しない）
         if (keyDownCallback && event.type == EventType::KeyDown) {
             keyDownCallback(this, event.key);
         }
@@ -164,7 +174,6 @@ namespace Lithos {
             mouseMoveCallback(this, event.mouseX, event.mouseY);
         }
 
-        // Elementへ伝播（ローカル座標）
         Event localEvent = event;
         localEvent.mouseX -= static_cast<int>(x);
         localEvent.mouseY -= static_cast<int>(y);
@@ -173,7 +182,7 @@ namespace Lithos {
             auto& elements = layerElements[i];
             for (auto it = elements.rbegin(); it != elements.rend(); ++it) {
                 if ((*it)->OnEvent(localEvent)) {
-                    return true;  // Elementが消費したら終了
+                    return true;
                 }
             }
         }
