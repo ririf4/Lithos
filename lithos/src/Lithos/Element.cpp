@@ -12,39 +12,25 @@ namespace Lithos {
         this->height = height;
     }
 
-    void Element::SetVisible(const bool visible) {
-        this->visible = visible;
-    }
+    void Element::SetVisible(const bool visible) { this->visible = visible; }
 
     bool Element::HitTest(int px, int py) const {
         return visible &&
-               px >= x && px <= x + width &&
-               py >= y && py <= y + height;
+            px >= x && px <= x + width &&
+            py >= y && py <= y + height;
     }
 
-    void Element::OnResize(const std::function<void(Element*, int, int)>& callback) {
-        resizeCallback = callback;
-    }
+    void Element::OnResize(const std::function<void(Element*, int, int)>& callback) { resizeCallback = callback; }
 
-    void Element::OnClickDown(const std::function<void(Element*, MouseButton)>& callback) {
-        clickDownCallback = callback;
-    }
+    void Element::OnClickDown(const std::function<void(Element*, MouseButton)>& callback) { clickDownCallback = callback; }
 
-    void Element::OnClickUp(const std::function<void(Element*, MouseButton)>& callback) {
-        clickUpCallback = callback;
-    }
+    void Element::OnClickUp(const std::function<void(Element*, MouseButton)>& callback) { clickUpCallback = callback; }
 
-    void Element::OnMouseMove(const std::function<void(Element*, int, int)>& callback) {
-        mouseMoveCallback = callback;
-    }
+    void Element::OnMouseMove(const std::function<void(Element*, int, int)>& callback) { mouseMoveCallback = callback; }
 
-    void Element::OnKeyDown(const std::function<void(Element*, int)>& callback) {
-        keyDownCallback = callback;
-    }
+    void Element::OnKeyDown(const std::function<void(Element*, int)>& callback) { keyDownCallback = callback; }
 
-    void Element::OnKeyUp(const std::function<void(Element*, int)>& callback) {
-        keyUpCallback = callback;
-    }
+    void Element::OnKeyUp(const std::function<void(Element*, int)>& callback) { keyUpCallback = callback; }
 
     bool Element::OnEvent(const Event& event) {
         // WindowResize

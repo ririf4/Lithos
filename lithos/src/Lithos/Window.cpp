@@ -1,12 +1,14 @@
+// Window.cpp
 #include "Lithos/Window.hpp"
-#include "Lithos/Layer.hpp"
+#include "Lithos/Event.hpp"
+#include "Lithos/Panel.hpp"
 
 #ifndef NOMINMAX
 #define NOMINMAX
 #endif
 
-#include <windows.h>
 #include <vector>
+#include <windows.h>
 #include "include/core/SkCanvas.h"
 #include "include/core/SkSurface.h"
 
@@ -39,7 +41,7 @@ namespace Lithos {
         HWND hwnd = nullptr;
         sk_sp<SkSurface> surface;
         int width{}, height{};
-        std::vector<std::unique_ptr<Layer>> layers;
+        std::vector<std::unique_ptr<Panel>> panels;
 
         static LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
             Impl* pImpl = nullptr;
@@ -52,99 +54,99 @@ namespace Lithos {
 
             if (pImpl) {
                 switch (message) {
-                case WM_PAINT: {
-                    pImpl->OnPaint();
-                    return 0;
-                }
+                    case WM_PAINT: {
+                        pImpl->OnPaint();
+                        return 0;
+                    }
 
-                case WM_LBUTTONDOWN: {
-                    Event evt;
-                    evt.type = EventType::MouseDown;
-                    evt.button = MouseButton::Left;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_LBUTTONDOWN: {
+                        Event evt;
+                        evt.type = EventType::MouseDown;
+                        evt.button = MouseButton::Left;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_LBUTTONUP: {
-                    Event evt;
-                    evt.type = EventType::MouseUp;
-                    evt.button = MouseButton::Left;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_LBUTTONUP: {
+                        Event evt;
+                        evt.type = EventType::MouseUp;
+                        evt.button = MouseButton::Left;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_RBUTTONDOWN: {
-                    Event evt;
-                    evt.type = EventType::MouseDown;
-                    evt.button = MouseButton::Right;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_RBUTTONDOWN: {
+                        Event evt;
+                        evt.type = EventType::MouseDown;
+                        evt.button = MouseButton::Right;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_RBUTTONUP: {
-                    Event evt;
-                    evt.type = EventType::MouseUp;
-                    evt.button = MouseButton::Right;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_RBUTTONUP: {
+                        Event evt;
+                        evt.type = EventType::MouseUp;
+                        evt.button = MouseButton::Right;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_MBUTTONDOWN: {
-                    Event evt;
-                    evt.type = EventType::MouseDown;
-                    evt.button = MouseButton::Middle;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_MBUTTONDOWN: {
+                        Event evt;
+                        evt.type = EventType::MouseDown;
+                        evt.button = MouseButton::Middle;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_MBUTTONUP: {
-                    Event evt;
-                    evt.type = EventType::MouseUp;
-                    evt.button = MouseButton::Middle;
-                    evt.mouseX = LOWORD(lParam);
-                    evt.mouseY = HIWORD(lParam);
+                    case WM_MBUTTONUP: {
+                        Event evt;
+                        evt.type = EventType::MouseUp;
+                        evt.button = MouseButton::Middle;
+                        evt.mouseX = LOWORD(lParam);
+                        evt.mouseY = HIWORD(lParam);
 
-                    for (const auto& layer : pImpl->layers) { if (layer->HandleEvent(evt)) break; }
-                    return 0;
-                }
+                        for (const auto& panel : pImpl->panels) { if (panel->HandleEvent(evt)) break; }
+                        return 0;
+                    }
 
-                case WM_SIZE: {
-                    pImpl->width = LOWORD(lParam);
-                    pImpl->height = HIWORD(lParam);
+                    case WM_SIZE: {
+                        pImpl->width = LOWORD(lParam);
+                        pImpl->height = HIWORD(lParam);
 
-                    Event evt;
-                    evt.type = EventType::WindowResize;
-                    evt.windowWidth = pImpl->width;
-                    evt.windowHeight = pImpl->height;
+                        Event evt;
+                        evt.type = EventType::WindowResize;
+                        evt.windowWidth = pImpl->width;
+                        evt.windowHeight = pImpl->height;
 
-                    for (const auto& layer : pImpl->layers) { layer->HandleEvent(evt); }
+                        for (const auto& panel : pImpl->panels) { panel->HandleEvent(evt); }
 
-                    const SkImageInfo info = SkImageInfo::MakeN32Premul(pImpl->width, pImpl->height);
-                    pImpl->surface = SkSurfaces::Raster(info);
+                        const SkImageInfo info = SkImageInfo::MakeN32Premul(pImpl->width, pImpl->height);
+                        pImpl->surface = SkSurfaces::Raster(info);
 
-                    InvalidateRect(hWnd, nullptr, FALSE);
-                    return 0;
-                }
+                        InvalidateRect(hWnd, nullptr, FALSE);
+                        return 0;
+                    }
 
-                case WM_DESTROY: {
-                    PostQuitMessage(0);
-                    return 0;
-                }
+                    case WM_DESTROY: {
+                        PostQuitMessage(0);
+                        return 0;
+                    }
                 }
             }
             return DefWindowProc(hWnd, message, wParam, lParam);
@@ -154,10 +156,10 @@ namespace Lithos {
             SkCanvas* canvas = surface->getCanvas();
             canvas->clear(SK_ColorWHITE);
 
-            for (const auto& layer : layers) { layer->Draw(canvas); }
+            for (const auto& panel : panels) { panel->Draw(canvas); }
 
             PAINTSTRUCT ps;
-            HDC hdc = BeginPaint(hwnd, &ps);
+            const HDC hdc = BeginPaint(hwnd, &ps);
 
             SkPixmap pixmap;
             if (surface->peekPixels(&pixmap)) {
@@ -169,15 +171,28 @@ namespace Lithos {
                 bmi.bmiHeader.biBitCount = 32;
                 bmi.bmiHeader.biCompression = BI_RGB;
 
-                StretchDIBits(hdc, 0, 0, pixmap.width(), pixmap.height(),
-                              0, 0, pixmap.width(), pixmap.height(),
-                              pixmap.addr(), &bmi, DIB_RGB_COLORS, SRCCOPY);
+                StretchDIBits(
+                    hdc,
+                    0,
+                    0,
+                    pixmap.width(),
+                    pixmap.height(),
+                    0,
+                    0,
+                    pixmap.width(),
+                    pixmap.height(),
+                    pixmap.addr(),
+                    &bmi,
+                    DIB_RGB_COLORS,
+                    SRCCOPY
+                );
             }
             EndPaint(hwnd, &ps);
         }
     };
 
-    Window::Window(const int width, const int height, const std::string& title) : pimpl(std::make_unique<Impl>()) {
+    Window::Window(const int width, const int height, const std::string& title)
+        : pimpl(std::make_unique<Impl>()) {
         pimpl->width = width;
         pimpl->height = height;
 
@@ -208,7 +223,7 @@ namespace Lithos {
         pimpl->surface = SkSurfaces::Raster(info);
     }
 
-    void Window::AddLayer(std::unique_ptr<Layer> layer) const { pimpl->layers.push_back(std::move(layer)); }
+    void Window::AddPanel(std::unique_ptr<Panel> panel) const { pimpl->panels.push_back(std::move(panel)); }
 
     void Window::Show() const { ShowWindow(pimpl->hwnd, SW_SHOW); }
 
@@ -221,4 +236,4 @@ namespace Lithos {
     }
 
     Window::~Window() = default;
-} // namespace Lithos
+}

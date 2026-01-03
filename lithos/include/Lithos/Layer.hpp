@@ -1,9 +1,8 @@
+// Layer.hpp
 #pragma once
-#include <vector>
-#include <memory>
+#include <string>
+#include <include/core/SkBlendMode.h>
 #include <include/core/SkCanvas.h>
-
-#include "Element.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -12,44 +11,31 @@
 #endif
 
 namespace Lithos {
-    enum class BlendMode {
-        Normal,
-        Multiply,
-        Screen,
-        Overlay
-    };
-
     class LITHOS_API Layer {
-    public:
-        Layer();
-        ~Layer();
+        public:
+            Layer();
+            explicit Layer(const std::string& name);
+            ~Layer();
 
-        Layer(const Layer&) = delete;
-        Layer& operator=(const Layer&) = delete;
+            Layer(const Layer&) = delete;
+            Layer& operator=(const Layer&) = delete;
+            Layer(Layer&&) = default;
+            Layer& operator=(Layer&&) = default;
 
-        Layer(Layer&&) = default;
-        Layer& operator=(Layer&&) = default;
+            void SetName(const std::string& name);
+            [[nodiscard]] const std::string& GetName() const;
 
-        void SetTransparent(bool value);
-        [[nodiscard]] bool IsTransparent() const;
+            void SetOpacity(float value);
+            [[nodiscard]] float GetOpacity() const;
 
-        void SetOpacity(float value);
-        [[nodiscard]] float GetOpacity() const;
+            void SetBlendMode(SkBlendMode mode);
+            [[nodiscard]] SkBlendMode GetBlendMode() const;
 
-        void SetBlendMode(BlendMode mode);
-        [[nodiscard]] BlendMode GetBlendMode() const;
+            void Draw(SkCanvas* canvas) const;
 
-        void AddElement(std::unique_ptr<Element> element);
-        [[nodiscard]] const std::vector<std::unique_ptr<Element>>& GetElements() const;
-
-        bool HandleEvent(const Event& event);
-
-        void Draw(SkCanvas* canvas) const;
-
-    private:
-        bool transparent;
-        float opacity;
-        BlendMode blendMode;
-        std::vector<std::unique_ptr<Element>> elements;
+        private:
+            std::string name;
+            float opacity;
+            SkBlendMode blendMode;
     };
 }

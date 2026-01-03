@@ -6,13 +6,11 @@
 
 namespace Lithos {
     RectElement::RectElement()
-        : color(SK_ColorWHITE)
-        , cornerRadius(0.0f) {
-    }
+        : color(SK_ColorWHITE),
+          cornerRadius(0.0f) {}
 
     RectElement::RectElement(const float x, const float y, const float width, const float height, const SkColor color)
-        : color(color)
-        , cornerRadius(0.0f) {
+        : color(color), cornerRadius(0.0f) {
         this->x = x;
         this->y = y;
         this->width = width;
@@ -30,16 +28,11 @@ namespace Lithos {
             SkRRect rrect;
             rrect.setRectXY(SkRect::MakeXYWH(x, y, width, height), cornerRadius, cornerRadius);
             canvas->drawRRect(rrect, paint);
-        } else {
-            canvas->drawRect(SkRect::MakeXYWH(x, y, width, height), paint);
         }
+        else { canvas->drawRect(SkRect::MakeXYWH(x, y, width, height), paint); }
     }
 
-    void RectElement::SetColor(const SkColor color) {
-        this->color = color;
-    }
+    void RectElement::SetColor(const SkColor color) { this->color = color; }
 
-    void RectElement::SetCornerRadius(const float radius) {
-        this->cornerRadius = radius;
-    }
+    void RectElement::SetCornerRadius(const float radius) { this->cornerRadius = radius; }
 }

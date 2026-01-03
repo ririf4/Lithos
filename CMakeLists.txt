@@ -8,14 +8,17 @@ find_package(unofficial-skia CONFIG REQUIRED)
 add_library(Lithos SHARED
         # HPP Header Files
         lithos/include/Lithos/Window.hpp
+        lithos/include/Lithos/Panel.hpp
         lithos/include/Lithos/Layer.hpp
         lithos/include/Lithos/Element.hpp
+
         lithos/include/Lithos/Event.hpp
 
         lithos/include/Lithos/Elements/RectElement.hpp
 
         # CPP Source Files
         lithos/src/Lithos/Window.cpp
+        lithos/src/Lithos/Panel.cpp
         lithos/src/Lithos/Layer.cpp
         lithos/src/Lithos/Element.cpp
 

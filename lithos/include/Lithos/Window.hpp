@@ -1,8 +1,8 @@
 #pragma once
-#include <string>
 #include <memory>
+#include <string>
 
-#include "Layer.hpp"
+#include "Panel.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -12,17 +12,17 @@
 
 namespace Lithos {
     class LITHOS_API Window {
-    public:
-        Window(int width, int height, const std::string& title);
-        ~Window();
+        public:
+            Window(int width, int height, const std::string& title);
+            ~Window();
 
-        void Show() const;
-        void RunMessageLoop() const;
+            void Show() const;
+            void RunMessageLoop() const;
 
-        void AddLayer(std::unique_ptr<Layer> layer) const;  // 追加
+            void AddPanel(std::unique_ptr<Panel> panel) const;
 
-    private:
-        struct Impl;
-        std::unique_ptr<Impl> pimpl;
+        private:
+            struct Impl;
+            std::unique_ptr<Impl> pimpl;
     };
 }
