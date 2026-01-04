@@ -3,34 +3,23 @@ project(Lithos)
 
 set(CMAKE_CXX_STANDARD 23)
 
-find_package(unofficial-skia CONFIG REQUIRED)
-
 add_library(Lithos SHARED
         # HPP Header Files
-        lithos/include/Lithos/Window.hpp
-        lithos/include/Lithos/Panel.hpp
-        lithos/include/Lithos/Layer.hpp
-        lithos/include/Lithos/Element.hpp
-
+        lithos/include/Lithos/Color.hpp
+        lithos/include/Lithos/Rect.hpp
         lithos/include/Lithos/Event.hpp
+        lithos/include/Lithos/Style.hpp
 
-        lithos/include/Lithos/Elements/RectElement.hpp
-        lithos/include/Lithos/Elements/CircleElement.hpp
-        lithos/include/Lithos/Elements/TextElement.hpp
+        lithos/include/Lithos/Node.hpp
+
+        lithos/include/Lithos/Window.hpp
 
         # CPP Source Files
-        lithos/src/Lithos/Window.cpp
-        lithos/src/Lithos/Panel.cpp
-        lithos/src/Lithos/Layer.cpp
-        lithos/src/Lithos/Element.cpp
 
-        lithos/src/Lithos/Elements/RectElement.cpp
-        lithos/src/Lithos/Elements/CircleElement.cpp
-        lithos/src/Lithos/Elements/TextElement.cpp
+        lithos/src/Lithos/Window.cpp
 )
 
 target_link_libraries(Lithos PRIVATE
-        unofficial::skia::skia
         user32.lib
         gdi32.lib
         shell32.lib
@@ -55,5 +44,4 @@ set_target_properties(LithosTest PROPERTIES
 
 target_link_libraries(LithosTest PRIVATE
         Lithos
-        unofficial::skia::skia  # 追加
 )

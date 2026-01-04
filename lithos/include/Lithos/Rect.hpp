@@ -17,32 +17,21 @@
 #pragma once
 
 namespace Lithos {
-    enum class EventType {
-        MouseDown,
-        MouseUp,
-        MouseMove,
-        KeyDown,
-        KeyUp,
-        WindowResize
-    };
+    struct Rect {
+        float x, y, width, height;
 
-    enum class MouseButton {
-        Left,
-        Right,
-        Middle,
-        None
-    };
+        Rect() : x(0), y(0), width(0), height(0) {}
+        Rect(const float x, const float y, const float width, const float height)
+            : x(x), y(y), width(width), height(height) {}
 
-    struct Event {
-        EventType type;
+        float Left() const { return x; }
+        float Top() const { return y; }
+        float Right() const { return x + width; }
+        float Bottom() const { return y + height; }
 
-        int mouseX = 0;
-        int mouseY = 0;
-        MouseButton button = MouseButton::None;
-
-        int windowWidth = 0;
-        int windowHeight = 0;
-
-        int key = 0;
+        bool Contains(const float px, const float py) const {
+            return px >= x && px <= x + width &&
+                   py >= y && py <= y + height;
+        }
     };
 }

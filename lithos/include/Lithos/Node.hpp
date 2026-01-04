@@ -1,0 +1,71 @@
+/*
+    Copyright 2026 RiriFa
+    Licensed under the Apache License, Version 2.0
+*/
+
+#pragma once
+#include <memory>
+#include <vector>
+#include <functional>
+#include "Lithos/Style.hpp"
+#include "Lithos/Rect.hpp"
+#include "Lithos/Event.hpp"
+
+struct ID2D1RenderTarget;
+
+#ifdef LITHOS_EXPORTS
+    #define LITHOS_API __declspec(dllexport)
+#else
+    #define LITHOS_API __declspec(dllimport)
+#endif
+
+namespace Lithos {
+    class LITHOS_API Node {
+    public:
+        Node();
+        virtual ~Node() = default;
+
+        void AddChild(std::unique_ptr<Node> child);
+        Node* GetParent() { return parent; }
+        const Node* GetParent() const { return parent; }
+        const std::vector<std::unique_ptr<Node>>& GetChildren() const { return children; }
+
+        Node& SetPosition(float x, float y);
+        Node& SetSize(float width, float height);
+        Node& SetWidth(float width);
+        Node& SetHeight(float height);
+        Node& SetPadding(float padding);
+        Node& SetMargin(float margin);
+        Node& SetBackgroundColor(Color color);
+        Node& SetBorderColor(Color color);
+        Node& SetBorderWidth(float width);
+        Node& SetBorderRadius(float radius);
+        Node& SetVisible(bool visible);
+        Node& SetOpacity(float opacity);
+
+        float GetX() const { return bounds.x; }
+        float GetY() const { return bounds.y; }
+        float GetWidth() const { return bounds.width; }
+        float GetHeight() const { return bounds.height; }
+        bool IsVisible() const { return visible; }
+        const Rect& GetBounds() const { return bounds; }
+
+        virtual void Layout();
+        virtual void Draw(ID2D1RenderTarget* rt);
+
+        virtual bool OnEvent(const Event& event);
+
+        bool HitTest(float x, float y) const;
+
+    protected:
+        Node* parent;
+        std::vector<std::unique_ptr<Node>> children;
+        Style style;
+        Rect bounds;
+        bool visible;
+        bool isDirty;
+
+        void MarkDirty();
+        void RequestLayout();
+    };
+}

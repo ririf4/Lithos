@@ -1,5 +1,5 @@
 /*
-    Copyright 2026 RiriFa
+Copyright 2026 RiriFa
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,8 +18,6 @@
 #include <memory>
 #include <string>
 
-#include "Panel.hpp"
-
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
 #else
@@ -33,12 +31,11 @@ namespace Lithos {
             ~Window();
 
             void Show() const;
-            void RunMessageLoop() const;
-
-            void AddPanel(std::unique_ptr<Panel> panel);
+            void Run();
 
         private:
             struct Impl;
+
             std::unique_ptr<Impl> pimpl;
     };
 }

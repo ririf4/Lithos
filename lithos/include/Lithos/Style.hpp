@@ -1,0 +1,112 @@
+/*
+    Copyright 2026 RiriFa
+
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+
+        http://www.apache.org/licenses/LICENSE-2.0
+
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+ */
+
+#pragma once
+#include <string>
+#include "Lithos/Color.hpp"
+
+namespace Lithos {
+    enum class Display {
+        Block,
+        Flex,
+        Grid,
+        Absolute
+    };
+
+    enum class FlexDirection {
+        Row,
+        Column
+    };
+
+    enum class JustifyContent {
+        Start,
+        End,
+        Center,
+        SpaceBetween,
+        SpaceAround
+    };
+
+    enum class AlignItems {
+        Start,
+        End,
+        Center,
+        Stretch
+    };
+
+    enum class Position {
+        Relative,
+        Absolute
+    };
+
+    enum class FontWeight {
+        Normal,
+        Bold
+    };
+
+    enum class TextAlign {
+        Left,
+        Center,
+        Right
+    };
+
+    struct Style {
+        Display display = Display::Block;
+        FlexDirection flexDirection = FlexDirection::Row;
+        JustifyContent justifyContent = JustifyContent::Start;
+        AlignItems alignItems = AlignItems::Stretch;
+        Position position = Position::Relative;
+
+        float width = 0;    // 0 = auto
+        float height = 0;   // 0 = auto
+        float minWidth = 0;
+        float minHeight = 0;
+        float maxWidth = 0;
+        float maxHeight = 0;
+
+        float padding = 0;
+        float paddingTop = 0;
+        float paddingRight = 0;
+        float paddingBottom = 0;
+        float paddingLeft = 0;
+
+        float margin = 0;
+        float marginTop = 0;
+        float marginRight = 0;
+        float marginBottom = 0;
+        float marginLeft = 0;
+
+        float gap = 0;
+
+        float left = 0;
+        float top = 0;
+        float right = 0;
+        float bottom = 0;
+
+        Color backgroundColor = Color::Transparent;
+        Color borderColor = Color::Transparent;
+        float borderWidth = 0;
+        float borderRadius = 0;
+        float opacity = 1.0f;
+
+        Color textColor = Color::Black;
+        float fontSize = 16;
+        std::string fontFamily = "Arial";
+        FontWeight fontWeight = FontWeight::Normal;
+        TextAlign textAlign = TextAlign::Left;
+
+        float flex = 0;
+    };
+}
