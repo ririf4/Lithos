@@ -15,6 +15,7 @@ add_library(Lithos SHARED
         lithos/include/Lithos/Window.hpp
 
         # CPP Source Files
+        lithos/src/Lithos/Node.cpp
 
         lithos/src/Lithos/Window.cpp
 )

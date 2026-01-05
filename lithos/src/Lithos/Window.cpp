@@ -14,7 +14,14 @@
     limitations under the License.
  */
 
+/*
+    Copyright 2026 RiriFa
+    Licensed under the Apache License, Version 2.0
+*/
+
 #include "Lithos/Window.hpp"
+#include "Lithos/Node.hpp"
+#include "Lithos/Event.hpp"
 #include <windows.h>
 #include <d2d1.h>
 #pragma comment(lib, "d2d1.lib")
@@ -45,20 +52,20 @@ namespace Lithos {
         HWND hwnd;
         ID2D1Factory* pD2DFactory;
         ID2D1HwndRenderTarget* pRenderTarget;
-        ID2D1SolidColorBrush* pBrush;
         int width;
         int height;
+
+        std::unique_ptr<Node> rootNode;
 
         Impl()
             : hwnd(nullptr),
               pD2DFactory(nullptr),
               pRenderTarget(nullptr),
-              pBrush(nullptr),
               width(0),
-              height(0) {}
+              height(0),
+              rootNode(std::make_unique<Node>()) {}
 
         ~Impl() {
-            SafeRelease(pBrush);
             SafeRelease(pRenderTarget);
             SafeRelease(pD2DFactory);
         }
@@ -82,18 +89,11 @@ namespace Lithos {
                 rc.bottom - rc.top
             );
 
-            const HRESULT hr = pD2DFactory->CreateHwndRenderTarget(
+            pD2DFactory->CreateHwndRenderTarget(
                 D2D1::RenderTargetProperties(),
                 D2D1::HwndRenderTargetProperties(hwnd, size),
                 &pRenderTarget
             );
-
-            if (SUCCEEDED(hr)) {
-                pRenderTarget->CreateSolidColorBrush(
-                    D2D1::ColorF(D2D1::ColorF::Black),
-                    &pBrush
-                );
-            }
         }
 
         void OnResize(const int newWidth, const int newHeight) {
@@ -102,8 +102,18 @@ namespace Lithos {
 
             if (pRenderTarget) {
                 pRenderTarget->Resize(D2D1::SizeU(width, height));
+
+                rootNode->SetSize(static_cast<float>(width), static_cast<float>(height));
+                rootNode->Layout();
+
                 InvalidateRect(hwnd, nullptr, FALSE);
             }
+
+            Event evt;
+            evt.type = EventType::WindowResize;
+            evt.windowWidth = width;
+            evt.windowHeight = height;
+            rootNode->OnEvent(evt);
         }
 
         void OnPaint() {
@@ -112,13 +122,55 @@ namespace Lithos {
             pRenderTarget->BeginDraw();
             pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
+            rootNode->Draw(pRenderTarget);
+
             const HRESULT hr = pRenderTarget->EndDraw();
 
             if (hr == D2DERR_RECREATE_TARGET) {
                 SafeRelease(pRenderTarget);
-                SafeRelease(pBrush);
                 CreateDeviceResources();
             }
+        }
+
+        void OnMouseEvent(UINT msg, WPARAM wParam, LPARAM lParam) {
+            Event evt;
+            evt.mouseX = LOWORD(lParam);
+            evt.mouseY = HIWORD(lParam);
+
+            switch (msg) {
+                case WM_LBUTTONDOWN:
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Left;
+                    break;
+                case WM_LBUTTONUP:
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Left;
+                    break;
+                case WM_RBUTTONDOWN:
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Right;
+                    break;
+                case WM_RBUTTONUP:
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Right;
+                    break;
+                case WM_MBUTTONDOWN:
+                    evt.type = EventType::MouseDown;
+                    evt.button = MouseButton::Middle;
+                    break;
+                case WM_MBUTTONUP:
+                    evt.type = EventType::MouseUp;
+                    evt.button = MouseButton::Middle;
+                    break;
+                case WM_MOUSEMOVE:
+                    evt.type = EventType::MouseMove;
+                    break;
+                default:
+                    return;
+            }
+
+            rootNode->OnEvent(evt);
+            InvalidateRect(hwnd, nullptr, FALSE);  // 再描画
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -144,6 +196,16 @@ namespace Lithos {
 
                 case WM_SIZE:
                     pImpl->OnResize(LOWORD(lParam), HIWORD(lParam));
+                    return 0;
+
+                case WM_LBUTTONDOWN:
+                case WM_LBUTTONUP:
+                case WM_RBUTTONDOWN:
+                case WM_RBUTTONUP:
+                case WM_MBUTTONDOWN:
+                case WM_MBUTTONUP:
+                case WM_MOUSEMOVE:
+                    pImpl->OnMouseEvent(msg, wParam, lParam);
                     return 0;
 
                 case WM_DESTROY:
@@ -192,6 +254,10 @@ namespace Lithos {
         );
 
         pimpl->CreateDeviceResources();
+
+        pimpl->rootNode->SetSize(static_cast<float>(width), static_cast<float>(height));
+        pimpl->rootNode->SetPosition(0, 0);
+        pimpl->rootNode->Layout();
     }
 
     Window::~Window() = default;
@@ -207,5 +273,9 @@ namespace Lithos {
             TranslateMessage(&msg);
             DispatchMessage(&msg);
         }
+    }
+
+    Node& Window::GetRoot() {
+        return *pimpl->rootNode;
     }
 }

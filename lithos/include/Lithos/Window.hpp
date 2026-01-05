@@ -1,5 +1,5 @@
 /*
-Copyright 2026 RiriFa
+    Copyright 2026 RiriFa
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@ Copyright 2026 RiriFa
 #include <memory>
 #include <string>
 
+#include "Node.hpp"
+
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
 #else
@@ -32,6 +34,8 @@ namespace Lithos {
 
             void Show() const;
             void Run();
+
+            Node& GetRoot();
 
         private:
             struct Impl;
