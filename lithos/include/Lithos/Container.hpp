@@ -1,5 +1,5 @@
 /*
-    Copyright 2026 RiriFa
+Copyright 2026 RiriFa
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -15,11 +15,7 @@
  */
 
 #pragma once
-#include <memory>
-#include <string>
-
-#include "Container.hpp"
-#include "Node.hpp"
+#include "Lithos/Node.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -28,20 +24,20 @@
 #endif
 
 namespace Lithos {
-    class LITHOS_API Window {
+    class LITHOS_API Container : public Node {
         public:
-            Window(int width, int height, const std::string& title);
-            ~Window();
+            Container();
+            ~Container() override = default;
 
-            void Show() const;
-            void Run();
+            Container& SetDisplay(Display display);
+            Container& SetFlexDirection(FlexDirection direction);
+            Container& SetJustifyContent(JustifyContent justify);
+            Container& SetAlignItems(AlignItems align);
+            Container& SetGap(float gap);
 
-            Node& GetRoot();
             Container& AddContainer();
 
-        private:
-            struct Impl;
-
-            std::unique_ptr<Impl> pimpl;
+            void Layout() override;
+            void Draw(ID2D1RenderTarget* rt) override;
     };
 }

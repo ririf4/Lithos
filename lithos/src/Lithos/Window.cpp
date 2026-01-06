@@ -14,16 +14,11 @@
     limitations under the License.
  */
 
-/*
-    Copyright 2026 RiriFa
-    Licensed under the Apache License, Version 2.0
-*/
-
 #include "Lithos/Window.hpp"
-#include "Lithos/Node.hpp"
-#include "Lithos/Event.hpp"
-#include <windows.h>
 #include <d2d1.h>
+#include <windows.h>
+#include "Lithos/Event.hpp"
+#include "Lithos/Node.hpp"
 #pragma comment(lib, "d2d1.lib")
 
 namespace Lithos {
@@ -170,7 +165,7 @@ namespace Lithos {
             }
 
             rootNode->OnEvent(evt);
-            InvalidateRect(hwnd, nullptr, FALSE);  // 再描画
+            InvalidateRect(hwnd, nullptr, FALSE);
         }
 
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -278,4 +273,12 @@ namespace Lithos {
     Node& Window::GetRoot() {
         return *pimpl->rootNode;
     }
+
+    Container& Window::AddContainer() {
+        auto container = std::make_unique<Container>();
+        Container& ref = *container;
+        pimpl->rootNode->AddChild(std::move(container));
+        return ref;
+    }
+
 }
