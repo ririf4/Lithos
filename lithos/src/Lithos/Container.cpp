@@ -1,5 +1,5 @@
 /*
-Copyright 2026 RiriFa
+    Copyright 2026 RiriFa
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -21,6 +21,12 @@ namespace Lithos {
 
     Container& Container::SetDisplay(const Display display) {
         style.display = display;
+        RequestLayout();
+        return *this;
+    }
+
+    Container& Container::SetPositionType(const Position pos) {
+        style.position = pos;
         RequestLayout();
         return *this;
     }
@@ -53,27 +59,27 @@ namespace Lithos {
         auto container = std::make_unique<Container>();
         Container& ref = *container;
         AddChild(std::move(container));
+        RequestLayout();
         return ref;
     }
 
     void Container::Layout() {
         Node::Layout();
 
-        //TODO: Improve
         if (style.display == Display::Flex) {
             float currentPos = 0;
 
             for (const auto& child : children) {
                 if (style.flexDirection == FlexDirection::Row) {
                     child->SetPosition(
-                        bounds.x + style.paddingLeft + currentPos,
-                        bounds.y + style.paddingTop
+                        style.paddingLeft + currentPos,
+                        style.paddingTop
                     );
                     currentPos += child->GetWidth() + style.gap;
                 } else {
                     child->SetPosition(
-                        bounds.x + style.paddingLeft,
-                        bounds.y + style.paddingTop + currentPos
+                        style.paddingLeft,
+                        style.paddingTop + currentPos
                     );
                     currentPos += child->GetHeight() + style.gap;
                 }
@@ -83,7 +89,7 @@ namespace Lithos {
         }
     }
 
-    void Container::Draw(ID2D1RenderTarget* rt) {
+    void Container::Draw(ID2D1DeviceContext* rt) {
         Node::Draw(rt);
     }
 }

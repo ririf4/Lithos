@@ -15,11 +15,17 @@
  */
 
 #include "Lithos/Window.hpp"
-#include <d2d1.h>
+#include <d2d1_1.h>
+#include <d3d11.h>
+#include <dxgi1_2.h>
 #include <windows.h>
+#include "Lithos/Container.hpp"
 #include "Lithos/Event.hpp"
 #include "Lithos/Node.hpp"
+
 #pragma comment(lib, "d2d1.lib")
+#pragma comment(lib, "d3d11.lib")
+#pragma comment(lib, "dxgi.lib")
 
 namespace Lithos {
     namespace {
@@ -27,16 +33,22 @@ namespace Lithos {
             if (utf8.empty()) return L"";
 
             const int size = MultiByteToWideChar(
-                CP_UTF8, 0,
-                utf8.data(), static_cast<int>(utf8.size()),
-                nullptr, 0
+                CP_UTF8,
+                0,
+                utf8.data(),
+                static_cast<int>(utf8.size()),
+                nullptr,
+                0
             );
 
             std::wstring result(size, 0);
             MultiByteToWideChar(
-                CP_UTF8, 0,
-                utf8.data(), static_cast<int>(utf8.size()),
-                result.data(), size
+                CP_UTF8,
+                0,
+                utf8.data(),
+                static_cast<int>(utf8.size()),
+                result.data(),
+                size
             );
 
             return result;
@@ -45,27 +57,46 @@ namespace Lithos {
 
     struct Window::Impl {
         HWND hwnd;
-        ID2D1Factory* pD2DFactory;
-        ID2D1HwndRenderTarget* pRenderTarget;
+
+        // Direct2D 1.1
+        ID2D1Factory1* pD2DFactory;
+        ID2D1Device* pD2DDevice;
+        ID2D1DeviceContext* pDeviceContext;
+
+        // Direct3D 11
+        ID3D11Device* pD3DDevice;
+        ID3D11DeviceContext* pD3DContext;
+        IDXGISwapChain1* pSwapChain;
+        ID2D1Bitmap1* pTargetBitmap;
+
         int width;
         int height;
-
         std::unique_ptr<Node> rootNode;
 
         Impl()
             : hwnd(nullptr),
               pD2DFactory(nullptr),
-              pRenderTarget(nullptr),
+              pD2DDevice(nullptr),
+              pDeviceContext(nullptr),
+              pD3DDevice(nullptr),
+              pD3DContext(nullptr),
+              pSwapChain(nullptr),
+              pTargetBitmap(nullptr),
               width(0),
               height(0),
               rootNode(std::make_unique<Node>()) {}
 
         ~Impl() {
-            SafeRelease(pRenderTarget);
+            SafeRelease(pTargetBitmap);
+            SafeRelease(pSwapChain);
+            SafeRelease(pDeviceContext);
+            SafeRelease(pD2DDevice);
+            SafeRelease(pD3DContext);
+            SafeRelease(pD3DDevice);
             SafeRelease(pD2DFactory);
         }
 
-        template<typename T>
+        template <typename T>
         void SafeRelease(T*& ptr) {
             if (ptr) {
                 ptr->Release();
@@ -74,29 +105,118 @@ namespace Lithos {
         }
 
         void CreateDeviceResources() {
-            if (pRenderTarget) return;
+            if (pDeviceContext) return;
 
-            RECT rc;
-            GetClientRect(hwnd, &rc);
+            D3D_FEATURE_LEVEL featureLevels[] = {
+                D3D_FEATURE_LEVEL_11_1,
+                D3D_FEATURE_LEVEL_11_0,
+                D3D_FEATURE_LEVEL_10_1,
+                D3D_FEATURE_LEVEL_10_0
+            };
 
-            const D2D1_SIZE_U size = D2D1::SizeU(
-                rc.right - rc.left,
-                rc.bottom - rc.top
+            UINT creationFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
+#ifdef _DEBUG
+            creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+#endif
+
+            D3D11CreateDevice(
+                nullptr,
+                D3D_DRIVER_TYPE_HARDWARE,
+                nullptr,
+                creationFlags,
+                featureLevels,
+                ARRAYSIZE(featureLevels),
+                D3D11_SDK_VERSION,
+                &pD3DDevice,
+                nullptr,
+                &pD3DContext
             );
 
-            pD2DFactory->CreateHwndRenderTarget(
-                D2D1::RenderTargetProperties(),
-                D2D1::HwndRenderTargetProperties(hwnd, size),
-                &pRenderTarget
+            IDXGIDevice* dxgiDevice = nullptr;
+            pD3DDevice->QueryInterface(&dxgiDevice);
+
+            pD2DFactory->CreateDevice(dxgiDevice, &pD2DDevice);
+            pD2DDevice->CreateDeviceContext(
+                D2D1_DEVICE_CONTEXT_OPTIONS_NONE,
+                &pDeviceContext
             );
+
+            IDXGIAdapter* dxgiAdapter = nullptr;
+            dxgiDevice->GetAdapter(&dxgiAdapter);
+
+            IDXGIFactory2* dxgiFactory = nullptr;
+            dxgiAdapter->GetParent(IID_PPV_ARGS(&dxgiFactory));
+
+            DXGI_SWAP_CHAIN_DESC1 swapChainDesc = {};
+            swapChainDesc.Width = width;
+            swapChainDesc.Height = height;
+            swapChainDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+            swapChainDesc.SampleDesc.Count = 1;
+            swapChainDesc.SampleDesc.Quality = 0;
+            swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+            swapChainDesc.BufferCount = 2;
+            swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_SEQUENTIAL;
+
+            dxgiFactory->CreateSwapChainForHwnd(
+                pD3DDevice,
+                hwnd,
+                &swapChainDesc,
+                nullptr,
+                nullptr,
+                &pSwapChain
+            );
+
+            SafeRelease(dxgiFactory);
+            SafeRelease(dxgiAdapter);
+            SafeRelease(dxgiDevice);
+
+            CreateBitmapFromSwapChain();
+        }
+
+        void CreateBitmapFromSwapChain() {
+            SafeRelease(pTargetBitmap);
+
+            IDXGISurface* dxgiBackBuffer = nullptr;
+            pSwapChain->GetBuffer(0, IID_PPV_ARGS(&dxgiBackBuffer));
+
+            UINT dpi = GetDpiForWindow(hwnd);
+            float dpiF = static_cast<float>(dpi);
+
+            D2D1_BITMAP_PROPERTIES1 bitmapProperties = D2D1::BitmapProperties1(
+                D2D1_BITMAP_OPTIONS_TARGET | D2D1_BITMAP_OPTIONS_CANNOT_DRAW,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED),
+                dpiF,
+                dpiF
+            );
+
+            pDeviceContext->CreateBitmapFromDxgiSurface(
+                dxgiBackBuffer,
+                &bitmapProperties,
+                &pTargetBitmap
+            );
+
+            pDeviceContext->SetTarget(pTargetBitmap);
+
+            SafeRelease(dxgiBackBuffer);
         }
 
         void OnResize(const int newWidth, const int newHeight) {
             width = newWidth;
             height = newHeight;
 
-            if (pRenderTarget) {
-                pRenderTarget->Resize(D2D1::SizeU(width, height));
+            if (pSwapChain) {
+                pDeviceContext->SetTarget(nullptr);
+                SafeRelease(pTargetBitmap);
+
+                pSwapChain->ResizeBuffers(
+                    0,
+                    width,
+                    height,
+                    DXGI_FORMAT_UNKNOWN,
+                    0
+                );
+
+                CreateBitmapFromSwapChain();
 
                 rootNode->SetSize(static_cast<float>(width), static_cast<float>(height));
                 rootNode->Layout();
@@ -112,19 +232,24 @@ namespace Lithos {
         }
 
         void OnPaint() {
-            if (!pRenderTarget) return;
+            if (!pDeviceContext) return;
 
-            pRenderTarget->BeginDraw();
-            pRenderTarget->Clear(D2D1::ColorF(D2D1::ColorF::White));
+            pDeviceContext->BeginDraw();
+            pDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
 
-            rootNode->Draw(pRenderTarget);
+            rootNode->Draw(pDeviceContext);
 
-            const HRESULT hr = pRenderTarget->EndDraw();
+            const HRESULT hr = pDeviceContext->EndDraw();
 
             if (hr == D2DERR_RECREATE_TARGET) {
-                SafeRelease(pRenderTarget);
+                SafeRelease(pTargetBitmap);
+                SafeRelease(pSwapChain);
+                SafeRelease(pDeviceContext);
+                SafeRelease(pD2DDevice);
                 CreateDeviceResources();
             }
+
+            pSwapChain->Present(1, 0);
         }
 
         void OnMouseEvent(UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -175,13 +300,10 @@ namespace Lithos {
                 const auto cs = reinterpret_cast<CREATESTRUCT*>(lParam);
                 pImpl = static_cast<Impl*>(cs->lpCreateParams);
                 SetWindowLongPtr(hwnd, GWLP_USERDATA, reinterpret_cast<LONG_PTR>(pImpl));
-            } else {
-                pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA));
             }
+            else { pImpl = reinterpret_cast<Impl*>(GetWindowLongPtr(hwnd, GWLP_USERDATA)); }
 
-            if (!pImpl) {
-                return DefWindowProc(hwnd, msg, wParam, lParam);
-            }
+            if (!pImpl) { return DefWindowProc(hwnd, msg, wParam, lParam); }
 
             switch (msg) {
                 case WM_PAINT:
@@ -215,13 +337,13 @@ namespace Lithos {
 
     Window::Window(const int width, const int height, const std::string& title)
         : pimpl(std::make_unique<Impl>()) {
-
         pimpl->width = width;
         pimpl->height = height;
 
         D2D1CreateFactory(
             D2D1_FACTORY_TYPE_SINGLE_THREADED,
-            &pimpl->pD2DFactory
+            __uuidof(ID2D1Factory1),
+            reinterpret_cast<void**>(&pimpl->pD2DFactory)
         );
 
         const std::wstring wTitle = ToWString(title);
@@ -240,8 +362,10 @@ namespace Lithos {
             L"LithosWindowClass",
             wTitle.c_str(),
             WS_OVERLAPPEDWINDOW,
-            CW_USEDEFAULT, CW_USEDEFAULT,
-            width, height,
+            CW_USEDEFAULT,
+            CW_USEDEFAULT,
+            width,
+            height,
             nullptr,
             nullptr,
             hInstance,
@@ -270,15 +394,13 @@ namespace Lithos {
         }
     }
 
-    Node& Window::GetRoot() {
-        return *pimpl->rootNode;
-    }
+    Node& Window::GetRoot() { return *pimpl->rootNode; }
 
     Container& Window::AddContainer() {
         auto container = std::make_unique<Container>();
         Container& ref = *container;
         pimpl->rootNode->AddChild(std::move(container));
+        pimpl->rootNode->Layout();
         return ref;
     }
-
 }

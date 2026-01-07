@@ -23,6 +23,10 @@ add_library(Lithos SHARED
 )
 
 target_link_libraries(Lithos PRIVATE
+        d2d1.lib
+        d3d11.lib
+        dxgi.lib
+        dxguid.lib
         user32.lib
         gdi32.lib
         shell32.lib

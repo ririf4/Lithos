@@ -15,14 +15,12 @@
  */
 
 #pragma once
+#include <d2d1_1.h>
 #include <memory>
 #include <vector>
-#include <functional>
-#include "Lithos/Style.hpp"
-#include "Lithos/Rect.hpp"
 #include "Lithos/Event.hpp"
-
-struct ID2D1RenderTarget;
+#include "Lithos/Rect.hpp"
+#include "Lithos/Style.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -35,6 +33,11 @@ namespace Lithos {
     public:
         Node();
         virtual ~Node() = default;
+
+        Node(const Node&) = delete;
+        Node& operator=(const Node&) = delete;
+        Node(Node&&) = default;
+        Node& operator=(Node&&) = default;
 
         void AddChild(std::unique_ptr<Node> child);
         Node* GetParent() { return parent; }
@@ -53,6 +56,8 @@ namespace Lithos {
         Node& SetBorderRadius(float radius);
         Node& SetVisible(bool visible);
         Node& SetOpacity(float opacity);
+        Node& SetShadow(float offsetX, float offsetY, float blur, Color color);
+        Node& SetShadowEnabled(bool enabled);
 
         float GetX() const { return bounds.x; }
         float GetY() const { return bounds.y; }
@@ -62,7 +67,7 @@ namespace Lithos {
         const Rect& GetBounds() const { return bounds; }
 
         virtual void Layout();
-        virtual void Draw(ID2D1RenderTarget* rt);
+        virtual void Draw(ID2D1DeviceContext* rt);
 
         virtual bool OnEvent(const Event& event);
 
@@ -75,6 +80,7 @@ namespace Lithos {
         Rect bounds;
         bool visible;
         bool isDirty;
+        bool isLayouting;
 
         void MarkDirty();
         void RequestLayout();

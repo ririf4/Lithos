@@ -1,5 +1,5 @@
 /*
-Copyright 2026 RiriFa
+    Copyright 2026 RiriFa
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ namespace Lithos {
             ~Container() override = default;
 
             Container& SetDisplay(Display display);
+            Container& SetPositionType(Position pos);
             Container& SetFlexDirection(FlexDirection direction);
             Container& SetJustifyContent(JustifyContent justify);
             Container& SetAlignItems(AlignItems align);
@@ -38,6 +39,6 @@ namespace Lithos {
             Container& AddContainer();
 
             void Layout() override;
-            void Draw(ID2D1RenderTarget* rt) override;
+            void Draw(ID2D1DeviceContext* rt) override;
     };
 }

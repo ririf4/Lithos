@@ -95,13 +95,20 @@ namespace Lithos {
         float right = 0;
         float bottom = 0;
 
-        Color backgroundColor = Color::Transparent;
-        Color borderColor = Color::Transparent;
+        Color backgroundColor = Transparent;
+        Color borderColor = Transparent;
         float borderWidth = 0;
         float borderRadius = 0;
         float opacity = 1.0f;
 
-        Color textColor = Color::Black;
+        // Shadow
+        bool shadowEnabled = false;
+        float shadowOffsetX = 0;
+        float shadowOffsetY = 0;
+        float shadowBlur = 0;
+        Color shadowColor = Color(0, 0, 0, 0.5f);
+
+        Color textColor = Black;
         float fontSize = 16;
         std::string fontFamily = "Arial";
         FontWeight fontWeight = FontWeight::Normal;
