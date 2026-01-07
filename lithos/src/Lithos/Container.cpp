@@ -63,25 +63,98 @@ namespace Lithos {
         return ref;
     }
 
-    void Container::Layout() {
+void Container::Layout() {
         Node::Layout();
 
         if (style.display == Display::Flex) {
-            float currentPos = 0;
+            float totalChildrenMainSize = 0;
+            auto visibleChildrenCount = 0;
 
             for (const auto& child : children) {
+                if (!child->IsVisible()) continue;
+                visibleChildrenCount++;
+
                 if (style.flexDirection == FlexDirection::Row) {
-                    child->SetPosition(
-                        style.paddingLeft + currentPos,
-                        style.paddingTop
-                    );
-                    currentPos += child->GetWidth() + style.gap;
+                    totalChildrenMainSize += child->GetWidth();
                 } else {
-                    child->SetPosition(
-                        style.paddingLeft,
-                        style.paddingTop + currentPos
-                    );
-                    currentPos += child->GetHeight() + style.gap;
+                    totalChildrenMainSize += child->GetHeight();
+                }
+            }
+
+            if (visibleChildrenCount > 1) {
+                totalChildrenMainSize += style.gap * (visibleChildrenCount - 1);
+            }
+
+            float currentPos = 0;
+            float extraGap = 0;
+
+            float containerMainSize = (style.flexDirection == FlexDirection::Row) ? bounds.width : bounds.height;
+            float paddingMainStart = (style.flexDirection == FlexDirection::Row) ? style.paddingLeft : style.paddingTop;
+            float paddingMainEnd = (style.flexDirection == FlexDirection::Row) ? style.paddingRight : style.paddingBottom;
+
+            float availableSpace = containerMainSize - totalChildrenMainSize - paddingMainStart - paddingMainEnd;
+
+            switch (style.justifyContent) {
+                case JustifyContent::End:
+                    currentPos = availableSpace;
+                    break;
+                case JustifyContent::Center:
+                    currentPos = availableSpace / 2.0f;
+                    break;
+                case JustifyContent::SpaceBetween:
+                    if (visibleChildrenCount > 1) extraGap = availableSpace / (visibleChildrenCount - 1);
+                    break;
+                case JustifyContent::SpaceAround:
+                    if (visibleChildrenCount > 0) {
+                        extraGap = availableSpace / visibleChildrenCount;
+                        currentPos = extraGap / 2.0f;
+                    }
+                    break;
+                case JustifyContent::Start:
+                default:
+                    currentPos = 0;
+                    break;
+            }
+
+            for (const auto& child : children) {
+                if (!child->IsVisible()) continue;
+
+                float crossOffset = 0;
+
+                float containerCrossSize = (style.flexDirection == FlexDirection::Row) ? bounds.height : bounds.width;
+                float paddingCrossStart = (style.flexDirection == FlexDirection::Row) ? style.paddingTop : style.paddingLeft;
+                float paddingCrossEnd = (style.flexDirection == FlexDirection::Row) ? style.paddingBottom : style.paddingRight;
+
+                float childCrossSize = (style.flexDirection == FlexDirection::Row) ? child->GetHeight() : child->GetWidth();
+                float availableCrossSpace = containerCrossSize - childCrossSize - paddingCrossStart - paddingCrossEnd;
+
+                switch (style.alignItems) {
+                    case AlignItems::End:
+                        crossOffset = availableCrossSpace;
+                        break;
+                    case AlignItems::Center:
+                        crossOffset = availableCrossSpace / 2.0f;
+                        break;
+                    case AlignItems::Stretch:
+                        if (style.flexDirection == FlexDirection::Row) {
+                            child->SetHeight(containerCrossSize - paddingCrossStart - paddingCrossEnd);
+                        } else {
+                            child->SetWidth(containerCrossSize - paddingCrossStart - paddingCrossEnd);
+                        }
+                        crossOffset = 0;
+                        break;
+                    case AlignItems::Start:
+                    default:
+                        crossOffset = 0;
+                        break;
+                }
+
+                if (style.flexDirection == FlexDirection::Row) {
+                    child->SetPosition(paddingMainStart + currentPos, paddingCrossStart + crossOffset);
+                    currentPos += child->GetWidth() + style.gap + extraGap;
+                } else {
+                    child->SetPosition(paddingCrossStart + crossOffset, paddingMainStart + currentPos);
+                    currentPos += child->GetHeight() + style.gap + extraGap;
                 }
 
                 child->Layout();
