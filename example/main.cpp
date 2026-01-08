@@ -1,107 +1,179 @@
 ﻿#include "Lithos/Color.hpp"
 #include "Lithos/Container.hpp"
+#include "Lithos/TextNode.hpp"
 #include "Lithos/Window.hpp"
 
 int main() {
-    Lithos::Window window(800, 600, "Lithos Shadow Test");
+    Lithos::Window window(900, 700, "Lithos TextNode Test");
 
     auto& root = window.GetRoot();
-    root.SetBackgroundColor(Lithos::LightGray);
+    root.SetBackgroundColor(Lithos::Color(0.95f, 0.95f, 0.97f));
 
-    // カード1：軽いシャドウ
-    auto& card1 = window.AddContainer();
-    card1.SetPositionType(Lithos::Position::Absolute);
-    card1.SetPosition(50, 50)
-        .SetSize(200, 150)
+    // ========== 見出しテスト ==========
+    auto titleText = std::make_unique<Lithos::TextNode>("TextNode Feature Test");
+    titleText->SetFontSize(32)
+              .SetFontWeight(Lithos::FontWeight::Bold)
+              .SetTextColor(Lithos::Color(0.1f, 0.1f, 0.2f))
+              .SetPosition(50, 30);
+    root.AddChild(std::move(titleText));
+
+    // ========== フォントサイズのバリエーション ==========
+    auto sectionTitle1 = std::make_unique<Lithos::TextNode>("Font Sizes");
+    sectionTitle1->SetFontSize(20)
+                  .SetFontWeight(Lithos::FontWeight::Medium)
+                  .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
+                  .SetPosition(50, 90);
+    root.AddChild(std::move(sectionTitle1));
+
+    auto text12 = std::make_unique<Lithos::TextNode>("12px - Small text");
+    text12->SetFontSize(12).SetTextColor(Lithos::Black).SetPosition(50, 120);
+    root.AddChild(std::move(text12));
+
+    auto text16 = std::make_unique<Lithos::TextNode>("16px - Normal text");
+    text16->SetFontSize(16).SetTextColor(Lithos::Black).SetPosition(50, 140);
+    root.AddChild(std::move(text16));
+
+    auto text24 = std::make_unique<Lithos::TextNode>("24px - Large text");
+    text24->SetFontSize(24).SetTextColor(Lithos::Black).SetPosition(50, 165);
+    root.AddChild(std::move(text24));
+
+    auto text36 = std::make_unique<Lithos::TextNode>("36px - Extra large text");
+    text36->SetFontSize(36).SetTextColor(Lithos::Black).SetPosition(50, 200);
+    root.AddChild(std::move(text36));
+
+    // ========== フォントウェイトのバリエーション ==========
+    auto sectionTitle2 = std::make_unique<Lithos::TextNode>("Font Weights");
+    sectionTitle2->SetFontSize(20)
+                  .SetFontWeight(Lithos::FontWeight::Medium)
+                  .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
+                  .SetPosition(400, 90);
+    root.AddChild(std::move(sectionTitle2));
+
+    auto thinText = std::make_unique<Lithos::TextNode>("Thin Weight");
+    thinText->SetFontSize(18)
+             .SetFontWeight(Lithos::FontWeight::Thin)
+             .SetTextColor(Lithos::Black)
+             .SetPosition(400, 120);
+    root.AddChild(std::move(thinText));
+
+    auto normalText = std::make_unique<Lithos::TextNode>("Normal Weight");
+    normalText->SetFontSize(18)
+               .SetFontWeight(Lithos::FontWeight::Normal)
+               .SetTextColor(Lithos::Black)
+               .SetPosition(400, 145);
+    root.AddChild(std::move(normalText));
+
+    auto boldText = std::make_unique<Lithos::TextNode>("Bold Weight");
+    boldText->SetFontSize(18)
+             .SetFontWeight(Lithos::FontWeight::Bold)
+             .SetTextColor(Lithos::Black)
+             .SetPosition(400, 170);
+    root.AddChild(std::move(boldText));
+
+    auto blackText = std::make_unique<Lithos::TextNode>("Black Weight");
+    blackText->SetFontSize(18)
+              .SetFontWeight(Lithos::FontWeight::Black)
+              .SetTextColor(Lithos::Black)
+              .SetPosition(400, 195);
+    root.AddChild(std::move(blackText));
+
+    // ========== テキストアライメント ==========
+    auto sectionTitle3 = std::make_unique<Lithos::TextNode>("Text Alignment");
+    sectionTitle3->SetFontSize(20)
+                  .SetFontWeight(Lithos::FontWeight::Medium)
+                  .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
+                  .SetPosition(50, 260);
+    root.AddChild(std::move(sectionTitle3));
+
+    auto& alignContainer = window.AddContainer();
+    alignContainer
+       .SetFlexDirection(Lithos::FlexDirection::Column)
+       .SetDisplay(Lithos::Display::Flex)
+       .SetPositionType(Lithos::Position::Absolute)
+       .SetPosition(50, 290)
+       .SetSize(800, 100)
+       .SetBackgroundColor(Lithos::Color(1.0f, 1.0f, 1.0f, 0.5f))
+       .SetBorderColor(Lithos::Color(0.8f, 0.8f, 0.8f))
+       .SetBorderWidth(1)
+       .SetBorderRadius(8)
+       .SetPadding(10);
+
+    auto leftText = std::make_unique<Lithos::TextNode>("Left aligned text");
+    leftText->SetFontSize(16)
+             .SetTextAlign(Lithos::TextAlign::Left)
+             .SetTextColor(Lithos::Black)
+             .SetWidth(780);
+    alignContainer.AddChild(std::move(leftText));
+
+    auto centerText = std::make_unique<Lithos::TextNode>("Center aligned text");
+    centerText->SetFontSize(16)
+               .SetTextAlign(Lithos::TextAlign::Center)
+               .SetTextColor(Lithos::Black)
+               .SetWidth(780);
+    alignContainer.AddChild(std::move(centerText));
+
+    auto rightText = std::make_unique<Lithos::TextNode>("Right aligned text");
+    rightText->SetFontSize(16)
+              .SetTextAlign(Lithos::TextAlign::Right)
+              .SetTextColor(Lithos::Black)
+              .SetWidth(780);
+    alignContainer.AddChild(std::move(rightText));
+
+    // ========== カラーバリエーション ==========
+    auto sectionTitle4 = std::make_unique<Lithos::TextNode>("Text Colors");
+    sectionTitle4->SetFontSize(20)
+                  .SetFontWeight(Lithos::FontWeight::Medium)
+                  .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
+                  .SetPosition(50, 410);
+    root.AddChild(std::move(sectionTitle4));
+
+    auto redText = std::make_unique<Lithos::TextNode>("Red text");
+    redText->SetFontSize(18).SetTextColor(Lithos::Red).SetPosition(50, 445);
+    root.AddChild(std::move(redText));
+
+    auto blueText = std::make_unique<Lithos::TextNode>("Blue text");
+    blueText->SetFontSize(18).SetTextColor(Lithos::Blue).SetPosition(180, 445);
+    root.AddChild(std::move(blueText));
+
+    auto greenText = std::make_unique<Lithos::TextNode>("Green text");
+    greenText->SetFontSize(18).SetTextColor(Lithos::SpringGreen).SetPosition(310, 445);
+    root.AddChild(std::move(greenText));
+
+    auto goldText = std::make_unique<Lithos::TextNode>("Gold text");
+    goldText->SetFontSize(18).SetTextColor(Lithos::Gold).SetPosition(460, 445);
+    root.AddChild(std::move(goldText));
+
+    // ========== カード内のテキスト ==========
+    auto& card = window.AddContainer();
+    card.SetPositionType(Lithos::Position::Absolute)
+        .SetPosition(50, 490)
+        .SetSize(800, 150)
         .SetBackgroundColor(Lithos::White)
-        .SetBorderRadius(15)
-        .SetShadow(0, 4, 8, Lithos::Color(0, 0, 0, 0.15f));
+        .SetBorderRadius(12)
+        .SetShadow(0, 4, 12, Lithos::Color(0, 0, 0, 0.1f))
+        .SetPadding(20);
 
-    // カード2：中くらいのシャドウ
-    auto& card2 = window.AddContainer();
-    card2.SetPositionType(Lithos::Position::Absolute);
-    card2.SetPosition(300, 50)
-        .SetSize(200, 150)
-        .SetBackgroundColor(Lithos::White)
-        .SetBorderRadius(15)
-        .SetShadow(0, 8, 16, Lithos::Color(0, 0, 0, 0.25f));
+    auto cardTitle = std::make_unique<Lithos::TextNode>("Card with Text");
+    cardTitle->SetFontSize(24)
+              .SetFontWeight(Lithos::FontWeight::Bold)
+              .SetTextColor(Lithos::Color(0.1f, 0.1f, 0.2f))
+              .SetPosition(70, 510);
+    root.AddChild(std::move(cardTitle));
 
-    // カード3：強いシャドウ
-    auto& card3 = window.AddContainer();
-    card3.SetPositionType(Lithos::Position::Absolute);
-    card3.SetPosition(550, 50)
-        .SetSize(200, 150)
-        .SetBackgroundColor(Lithos::White)
-        .SetBorderRadius(15)
-        .SetShadow(0, 12, 24, Lithos::Color(0, 0, 0, 0.35f));
+    auto cardBody = std::make_unique<Lithos::TextNode>(
+        "This is a card containing text with shadows and rounded corners."
+    );
+    cardBody->SetFontSize(16)
+             .SetTextColor(Lithos::Color(0.3f, 0.3f, 0.4f))
+             .SetPosition(70, 545);
+    root.AddChild(std::move(cardBody));
 
-    // ボタン風：軽いシャドウ
-    auto& button1 = window.AddContainer();
-    button1.SetPositionType(Lithos::Position::Absolute);
-    button1.SetPosition(100, 250)
-        .SetSize(150, 50)
-        .SetBackgroundColor(Lithos::Blue)
-        .SetBorderRadius(8)
-        .SetShadow(0, 2, 4, Lithos::Color(0, 0, 0, 0.2f));
-
-    // ボタン風：中程度のシャドウ（ホバー状態風）
-    auto& button2 = window.AddContainer();
-    button2.SetPositionType(Lithos::Position::Absolute);
-    button2.SetPosition(300, 250)
-        .SetSize(150, 50)
-        .SetBackgroundColor(Lithos::Blue)
-        .SetBorderRadius(8)
-        .SetShadow(0, 4, 8, Lithos::Color(0, 0, 0, 0.3f));
-
-    // ボタン風：強いシャドウ（クリック風）
-    auto& button3 = window.AddContainer();
-    button3.SetPositionType(Lithos::Position::Absolute);
-    button3.SetPosition(500, 250)
-        .SetSize(150, 50)
-        .SetBackgroundColor(Lithos::Blue)
-        .SetBorderRadius(8)
-        .SetShadow(0, 1, 2, Lithos::Color(0, 0, 0, 0.2f));
-
-    // 円形：影付き
-    auto& circle = window.AddContainer();
-    circle.SetPositionType(Lithos::Position::Absolute);
-    circle.SetPosition(150, 350)
-        .SetSize(100, 100)
-        .SetBackgroundColor(Lithos::Red)
-        .SetBorderRadius(50)
-        .SetShadow(0, 8, 16, Lithos::Color(0, 0, 0, 0.3f));
-
-    // Flexコンテナ：影付きカード
-    auto& flexCard = window.AddContainer();
-    flexCard.SetPositionType(Lithos::Position::Absolute);
-    flexCard.SetDisplay(Lithos::Display::Flex)
-            .SetFlexDirection(Lithos::FlexDirection::Column)
-            .SetGap(15)
-            .SetPosition(300, 350)
-            .SetSize(450, 200)
-            .SetBackgroundColor(Lithos::White)
-            .SetPadding(20)
-            .SetBorderRadius(12)
-            .SetShadow(0, 10, 20, Lithos::Color(0, 0, 0, 0.2f));
-
-    // Flexカード内の子要素
-    auto& flexChild1 = flexCard.AddContainer();
-    flexChild1.SetSize(410, 40)
-              .SetBackgroundColor(Lithos::SpringGreen)
-              .SetBorderRadius(6)
-              .SetShadow(0, 2, 4, Lithos::Color(0, 0, 0, 0.1f));
-
-    auto& flexChild2 = flexCard.AddContainer();
-    flexChild2.SetSize(410, 40)
-              .SetBackgroundColor(Lithos::Gold)
-              .SetBorderRadius(6)
-              .SetShadow(0, 2, 4, Lithos::Color(0, 0, 0, 0.1f));
-
-    auto& flexChild3 = flexCard.AddContainer();
-    flexChild3.SetSize(410, 40)
-              .SetBackgroundColor(Lithos::SkyBlue)
-              .SetBorderRadius(6)
-              .SetShadow(0, 2, 4, Lithos::Color(0, 0, 0, 0.1f));
+    auto cardSubtext = std::make_unique<Lithos::TextNode>("Demonstrating TextNode integration");
+    cardSubtext->SetFontSize(14)
+                .SetFontStyle(Lithos::FontStyle::Italic)
+                .SetTextColor(Lithos::Color(0.5f, 0.5f, 0.6f))
+                .SetPosition(70, 575);
+    root.AddChild(std::move(cardSubtext));
 
     window.Show();
     window.Run();

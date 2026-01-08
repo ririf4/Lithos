@@ -11,12 +11,14 @@ add_library(Lithos SHARED
         lithos/include/Lithos/Style.hpp
 
         lithos/include/Lithos/Node.hpp
+        lithos/include/Lithos/TextNode.hpp
         lithos/include/Lithos/Container.hpp
 
         lithos/include/Lithos/Window.hpp
 
         # CPP Source Files
         lithos/src/Lithos/Node.cpp
+        lithos/src/Lithos/TextNode.cpp
         lithos/src/Lithos/Container.cpp
 
         lithos/src/Lithos/Window.cpp
@@ -27,6 +29,7 @@ target_link_libraries(Lithos PRIVATE
         d3d11.lib
         dxgi.lib
         dxguid.lib
+        dwrite.lib
         user32.lib
         gdi32.lib
         shell32.lib

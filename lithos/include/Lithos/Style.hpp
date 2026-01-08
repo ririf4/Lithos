@@ -15,6 +15,7 @@
  */
 
 #pragma once
+#include <dwrite.h>
 #include <string>
 #include "Lithos/Color.hpp"
 
@@ -22,8 +23,7 @@ namespace Lithos {
     enum class Display {
         Block,
         Flex,
-        Grid,
-        Absolute
+        Grid
     };
 
     enum class FlexDirection {
@@ -52,14 +52,26 @@ namespace Lithos {
     };
 
     enum class FontWeight {
-        Normal,
-        Bold
+        Thin = DWRITE_FONT_WEIGHT_THIN,
+        Light = DWRITE_FONT_WEIGHT_LIGHT,
+        Normal = DWRITE_FONT_WEIGHT_NORMAL,
+        Medium = DWRITE_FONT_WEIGHT_MEDIUM,
+        Bold = DWRITE_FONT_WEIGHT_BOLD,
+        ExtraBold = DWRITE_FONT_WEIGHT_EXTRA_BOLD,
+        Black = DWRITE_FONT_WEIGHT_BLACK
+    };
+
+    enum class FontStyle {
+        Normal = DWRITE_FONT_STYLE_NORMAL,
+        Italic = DWRITE_FONT_STYLE_ITALIC,
+        Oblique = DWRITE_FONT_STYLE_OBLIQUE
     };
 
     enum class TextAlign {
         Left,
         Center,
-        Right
+        Right,
+        Justify
     };
 
     struct Style {
@@ -113,6 +125,7 @@ namespace Lithos {
         std::string fontFamily = "Arial";
         FontWeight fontWeight = FontWeight::Normal;
         TextAlign textAlign = TextAlign::Left;
+        FontStyle fontStyle = FontStyle::Normal;
 
         float flex = 0;
     };
