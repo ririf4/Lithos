@@ -16,11 +16,21 @@
 
 #pragma once
 
+#include <Windows.h>
+
+#ifdef LITHOS_EXPORTS
+    #define LITHOS_API __declspec(dllexport)
+#else
+    #define LITHOS_API __declspec(dllimport)
+#endif
+
 namespace Lithos {
     enum class EventType {
         MouseDown,
         MouseUp,
         MouseMove,
+        MouseWheel,
+
         KeyDown,
         KeyUp,
         WindowResize
@@ -33,12 +43,36 @@ namespace Lithos {
         None
     };
 
+    enum class CursorType {
+        Arrow,      // IDC_ARROW
+        Hand,       // IDC_HAND
+        IBeam,      // IDC_IBEAM
+        Wait,       // IDC_WAIT
+        Cross,      // IDC_CROSS
+        SizeAll,    // IDC_SIZEALL
+        No          // IDC_NO
+    };
+
+    inline LPCWSTR GetWindowsCursor(CursorType type) {
+        switch (type) {
+            case CursorType::Hand:    return IDC_HAND;
+            case CursorType::IBeam:   return IDC_IBEAM;
+            case CursorType::Wait:    return IDC_WAIT;
+            case CursorType::Cross:   return IDC_CROSS;
+            case CursorType::SizeAll: return IDC_SIZEALL;
+            case CursorType::No:      return IDC_NO;
+            case CursorType::Arrow:
+            default:                  return IDC_ARROW;
+        }
+    }
+
     struct Event {
         EventType type;
 
         int mouseX = 0;
         int mouseY = 0;
         MouseButton button = MouseButton::None;
+        int wheelDelta = 0;
 
         int windowWidth = 0;
         int windowHeight = 0;

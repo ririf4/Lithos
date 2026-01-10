@@ -13,6 +13,8 @@ add_library(Lithos SHARED
         lithos/include/Lithos/Node.hpp
         lithos/include/Lithos/TextNode.hpp
         lithos/include/Lithos/Container.hpp
+        lithos/include/Lithos/ScrollableContainer.hpp
+        lithos/include/Lithos/Button.hpp
 
         lithos/include/Lithos/Window.hpp
 
@@ -20,6 +22,8 @@ add_library(Lithos SHARED
         lithos/src/Lithos/Node.cpp
         lithos/src/Lithos/TextNode.cpp
         lithos/src/Lithos/Container.cpp
+        lithos/src/Lithos/ScrollableContainer.cpp
+        lithos/src/Lithos/Button.cpp
 
         lithos/src/Lithos/Window.cpp
 )
@@ -46,12 +50,10 @@ if(MSVC)
 endif()
 
 # >==================== Example Application =================<
-add_executable(LithosTest example/main.cpp)
+project(LithosTestAndExample)
 
-set_target_properties(LithosTest PROPERTIES
-        LINK_FLAGS "/ENTRY:mainCRTStartup"
+add_executable(LithosTestAndExample
+        example/main.cpp
 )
 
-target_link_libraries(LithosTest PRIVATE
-        Lithos
-)
+target_link_libraries(LithosTestAndExample PRIVATE Lithos)

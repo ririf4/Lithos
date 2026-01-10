@@ -39,6 +39,8 @@ namespace Lithos {
             Node& GetRoot();
             Container& AddContainer();
 
+            void SetCursor(LPCWSTR cursorType);
+
         private:
             struct Impl;
             std::unique_ptr<Impl> pimpl;

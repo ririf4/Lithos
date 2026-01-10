@@ -18,9 +18,9 @@
 #include <d2d1_1.h>
 #include <memory>
 #include <vector>
-#include "Lithos/Event.hpp"
-#include "Lithos/Rect.hpp"
-#include "Lithos/Style.hpp"
+#include "Event.hpp"
+#include "Rect.hpp"
+#include "Style.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)

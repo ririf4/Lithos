@@ -16,6 +16,12 @@
 
 #pragma once
 
+#ifdef LITHOS_EXPORTS
+    #define LITHOS_API __declspec(dllexport)
+#else
+    #define LITHOS_API __declspec(dllimport)
+#endif
+
 namespace Lithos {
     struct Rect {
         float x, y, width, height;

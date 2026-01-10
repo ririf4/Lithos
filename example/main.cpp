@@ -1,181 +1,211 @@
-﻿#include "Lithos/Color.hpp"
+﻿#include <iostream>
+
+#include "Lithos/Button.hpp"
+#include "Lithos/Color.hpp"
 #include "Lithos/Container.hpp"
+#include "Lithos/ScrollableContainer.hpp"
 #include "Lithos/TextNode.hpp"
 #include "Lithos/Window.hpp"
 
 int main() {
-    Lithos::Window window(900, 700, "Lithos TextNode Test");
+    Lithos::Window window(900, 700, "Lithos Button Test");
 
     auto& root = window.GetRoot();
     root.SetBackgroundColor(Lithos::Color(0.95f, 0.95f, 0.97f));
 
-    // ========== 見出しテスト ==========
-    auto titleText = std::make_unique<Lithos::TextNode>("TextNode Feature Test");
+    // ========== タイトル ==========
+    auto titleText = std::make_unique<Lithos::TextNode>("Button Component Test");
     titleText->SetFontSize(32)
               .SetFontWeight(Lithos::FontWeight::Bold)
               .SetTextColor(Lithos::Color(0.1f, 0.1f, 0.2f))
               .SetPosition(50, 30);
     root.AddChild(std::move(titleText));
 
-    // ========== フォントサイズのバリエーション ==========
-    auto sectionTitle1 = std::make_unique<Lithos::TextNode>("Font Sizes");
+    // ========== 基本的なボタン ==========
+    auto sectionTitle1 = std::make_unique<Lithos::TextNode>("Basic Buttons");
     sectionTitle1->SetFontSize(20)
                   .SetFontWeight(Lithos::FontWeight::Medium)
                   .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
-                  .SetPosition(50, 90);
+                  .SetPosition(50, 100);
     root.AddChild(std::move(sectionTitle1));
 
-    auto text12 = std::make_unique<Lithos::TextNode>("12px - Small text");
-    text12->SetFontSize(12).SetTextColor(Lithos::Black).SetPosition(50, 120);
-    root.AddChild(std::move(text12));
+    // ボタン1: デフォルトスタイル
+    auto button1 = std::make_unique<Lithos::Button>("Click Me!");
+    button1->SetOnClick([](Lithos::Button* btn) {
+               std::cout << "Button 1 clicked!" << std::endl;
+               btn->SetLabel("Clicked!");
+           })
+           .SetSize(150, 50)
+           .SetPosition(50, 140);
+    root.AddChild(std::move(button1));
 
-    auto text16 = std::make_unique<Lithos::TextNode>("16px - Normal text");
-    text16->SetFontSize(16).SetTextColor(Lithos::Black).SetPosition(50, 140);
-    root.AddChild(std::move(text16));
+    // ボタン2: カスタムカラー
+    auto button2 = std::make_unique<Lithos::Button>("Custom Colors");
+    button2->SetNormalColor(Lithos::Color(0.2f, 0.7f, 0.3f))  // Green
+           .SetHoverColor(Lithos::Color(0.3f, 0.8f, 0.4f))
+           .SetPressedColor(Lithos::Color(0.15f, 0.6f, 0.25f))
+           .SetOnClick([](Lithos::Button* btn) {
+               std::cout << "Button 2 clicked!" << std::endl;
+           })
+           .SetSize(150, 50)
+           .SetPosition(220, 140);
+    root.AddChild(std::move(button2));
 
-    auto text24 = std::make_unique<Lithos::TextNode>("24px - Large text");
-    text24->SetFontSize(24).SetTextColor(Lithos::Black).SetPosition(50, 165);
-    root.AddChild(std::move(text24));
+    // ボタン3: 角丸大きめ
+    auto button3 = std::make_unique<Lithos::Button>("Rounded");
+    button3->SetNormalColor(Lithos::Color(0.8f, 0.3f, 0.3f))  // Red
+           .SetHoverColor(Lithos::Color(0.9f, 0.4f, 0.4f))
+           .SetPressedColor(Lithos::Color(0.7f, 0.2f, 0.2f))
+           .SetOnClick([](Lithos::Button* btn) {
+               std::cout << "Button 3 clicked!" << std::endl;
+           })
+           .SetBorderRadius(25)
+           .SetSize(150, 50)
+           .SetPosition(390, 140);
+    root.AddChild(std::move(button3));
 
-    auto text36 = std::make_unique<Lithos::TextNode>("36px - Extra large text");
-    text36->SetFontSize(36).SetTextColor(Lithos::Black).SetPosition(50, 200);
-    root.AddChild(std::move(text36));
-
-    // ========== フォントウェイトのバリエーション ==========
-    auto sectionTitle2 = std::make_unique<Lithos::TextNode>("Font Weights");
+    // ========== サイズバリエーション ==========
+    auto sectionTitle2 = std::make_unique<Lithos::TextNode>("Different Sizes");
     sectionTitle2->SetFontSize(20)
                   .SetFontWeight(Lithos::FontWeight::Medium)
                   .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
-                  .SetPosition(400, 90);
+                  .SetPosition(50, 220);
     root.AddChild(std::move(sectionTitle2));
 
-    auto thinText = std::make_unique<Lithos::TextNode>("Thin Weight");
-    thinText->SetFontSize(18)
-             .SetFontWeight(Lithos::FontWeight::Thin)
-             .SetTextColor(Lithos::Black)
-             .SetPosition(400, 120);
-    root.AddChild(std::move(thinText));
+    // 小さいボタン
+    auto buttonSmall = std::make_unique<Lithos::Button>("Small");
+    buttonSmall->SetFontSize(12)
+               .SetOnClick([](Lithos::Button* btn) {
+                   std::cout << "Small button clicked!" << std::endl;
+               })
+               .SetSize(100, 30)
+               .SetPosition(50, 260);
+    root.AddChild(std::move(buttonSmall));
 
-    auto normalText = std::make_unique<Lithos::TextNode>("Normal Weight");
-    normalText->SetFontSize(18)
-               .SetFontWeight(Lithos::FontWeight::Normal)
-               .SetTextColor(Lithos::Black)
-               .SetPosition(400, 145);
-    root.AddChild(std::move(normalText));
+    // 中サイズボタン
+    auto buttonMedium = std::make_unique<Lithos::Button>("Medium");
+    buttonMedium->SetFontSize(16)
+                .SetOnClick([](Lithos::Button* btn) {
+                    std::cout << "Medium button clicked!" << std::endl;
+                })
+                .SetSize(130, 40)
+                .SetPosition(170, 255);
+    root.AddChild(std::move(buttonMedium));
 
-    auto boldText = std::make_unique<Lithos::TextNode>("Bold Weight");
-    boldText->SetFontSize(18)
-             .SetFontWeight(Lithos::FontWeight::Bold)
-             .SetTextColor(Lithos::Black)
-             .SetPosition(400, 170);
-    root.AddChild(std::move(boldText));
+    // 大きいボタン
+    auto buttonLarge = std::make_unique<Lithos::Button>("Large Button");
+    buttonLarge->SetFontSize(20)
+               .SetOnClick([](Lithos::Button* btn) {
+                   std::cout << "Large button clicked!" << std::endl;
+               })
+               .SetSize(180, 60)
+               .SetPosition(320, 250);
+    root.AddChild(std::move(buttonLarge));
 
-    auto blackText = std::make_unique<Lithos::TextNode>("Black Weight");
-    blackText->SetFontSize(18)
-              .SetFontWeight(Lithos::FontWeight::Black)
-              .SetTextColor(Lithos::Black)
-              .SetPosition(400, 195);
-    root.AddChild(std::move(blackText));
-
-    // ========== テキストアライメント ==========
-    auto sectionTitle3 = std::make_unique<Lithos::TextNode>("Text Alignment");
+    // ========== 無効化されたボタン ==========
+    auto sectionTitle3 = std::make_unique<Lithos::TextNode>("Disabled Button");
     sectionTitle3->SetFontSize(20)
                   .SetFontWeight(Lithos::FontWeight::Medium)
                   .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
-                  .SetPosition(50, 260);
+                  .SetPosition(50, 340);
     root.AddChild(std::move(sectionTitle3));
 
-    auto& alignContainer = window.AddContainer();
-    alignContainer
-       .SetFlexDirection(Lithos::FlexDirection::Column)
-       .SetDisplay(Lithos::Display::Flex)
-       .SetPositionType(Lithos::Position::Absolute)
-       .SetPosition(50, 290)
-       .SetSize(800, 100)
-       .SetBackgroundColor(Lithos::Color(1.0f, 1.0f, 1.0f, 0.5f))
-       .SetBorderColor(Lithos::Color(0.8f, 0.8f, 0.8f))
-       .SetBorderWidth(1)
-       .SetBorderRadius(8)
-       .SetPadding(10);
+    auto buttonDisabled = std::make_unique<Lithos::Button>("Disabled Button");
+    buttonDisabled->SetEnabled(false)
+                  .SetOnClick([](Lithos::Button* btn) {
+                      std::cout << "This shouldn't be called!" << std::endl;
+                  })
+                  .SetSize(150, 50)
+                  .SetPosition(50, 380);
+    root.AddChild(std::move(buttonDisabled));
 
-    auto leftText = std::make_unique<Lithos::TextNode>("Left aligned text");
-    leftText->SetFontSize(16)
-             .SetTextAlign(Lithos::TextAlign::Left)
-             .SetTextColor(Lithos::Black)
-             .SetWidth(780);
-    alignContainer.AddChild(std::move(leftText));
-
-    auto centerText = std::make_unique<Lithos::TextNode>("Center aligned text");
-    centerText->SetFontSize(16)
-               .SetTextAlign(Lithos::TextAlign::Center)
-               .SetTextColor(Lithos::Black)
-               .SetWidth(780);
-    alignContainer.AddChild(std::move(centerText));
-
-    auto rightText = std::make_unique<Lithos::TextNode>("Right aligned text");
-    rightText->SetFontSize(16)
-              .SetTextAlign(Lithos::TextAlign::Right)
-              .SetTextColor(Lithos::Black)
-              .SetWidth(780);
-    alignContainer.AddChild(std::move(rightText));
-
-    // ========== カラーバリエーション ==========
-    auto sectionTitle4 = std::make_unique<Lithos::TextNode>("Text Colors");
+    // ========== インタラクティブな例 ==========
+    auto sectionTitle4 = std::make_unique<Lithos::TextNode>("Interactive Example");
     sectionTitle4->SetFontSize(20)
                   .SetFontWeight(Lithos::FontWeight::Medium)
                   .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
-                  .SetPosition(50, 410);
+                  .SetPosition(50, 460);
     root.AddChild(std::move(sectionTitle4));
 
-    auto redText = std::make_unique<Lithos::TextNode>("Red text");
-    redText->SetFontSize(18).SetTextColor(Lithos::Red).SetPosition(50, 445);
-    root.AddChild(std::move(redText));
+    // カウンターテキスト
+    auto counterText = std::make_unique<Lithos::TextNode>("Count: 0");
+    counterText->SetFontSize(18)
+               .SetTextColor(Lithos::Black)
+               .SetPosition(50, 500);
+    auto* counterTextPtr = counterText.get();
+    root.AddChild(std::move(counterText));
 
-    auto blueText = std::make_unique<Lithos::TextNode>("Blue text");
-    blueText->SetFontSize(18).SetTextColor(Lithos::Blue).SetPosition(180, 445);
-    root.AddChild(std::move(blueText));
+    // カウントアップボタン
+    int* counter = new int(0);
+    auto buttonIncrement = std::make_unique<Lithos::Button>("Increment");
+    buttonIncrement->SetOnClick([counter, counterTextPtr](Lithos::Button* btn) {
+                       (*counter)++;
+                       counterTextPtr->SetText("Count: " + std::to_string(*counter));
+                       std::cout << "Count: " << *counter << std::endl;
+                   })
+                   .SetSize(120, 40)
+                   .SetPosition(50, 530);
+    root.AddChild(std::move(buttonIncrement));
 
-    auto greenText = std::make_unique<Lithos::TextNode>("Green text");
-    greenText->SetFontSize(18).SetTextColor(Lithos::SpringGreen).SetPosition(310, 445);
-    root.AddChild(std::move(greenText));
+    // リセットボタン
+    auto buttonReset = std::make_unique<Lithos::Button>("Reset");
+    buttonReset->SetNormalColor(Lithos::Color(0.7f, 0.3f, 0.3f))
+               .SetHoverColor(Lithos::Color(0.8f, 0.4f, 0.4f))
+               .SetPressedColor(Lithos::Color(0.6f, 0.2f, 0.2f))
+               .SetOnClick([counter, counterTextPtr](Lithos::Button* btn) {
+                   *counter = 0;
+                   counterTextPtr->SetText("Count: 0");
+                   std::cout << "Reset!" << std::endl;
+               })
+               .SetSize(120, 40)
+               .SetPosition(190, 530);
+    root.AddChild(std::move(buttonReset));
 
-    auto goldText = std::make_unique<Lithos::TextNode>("Gold text");
-    goldText->SetFontSize(18).SetTextColor(Lithos::Gold).SetPosition(460, 445);
-    root.AddChild(std::move(goldText));
+    // ========== スクロール可能なボタンリスト ==========
+    auto sectionTitle5 = std::make_unique<Lithos::TextNode>("Scrollable Button List");
+    sectionTitle5->SetFontSize(20)
+                  .SetFontWeight(Lithos::FontWeight::Medium)
+                  .SetTextColor(Lithos::Color(0.2f, 0.2f, 0.3f))
+                  .SetPosition(550, 100);
+    root.AddChild(std::move(sectionTitle5));
 
-    // ========== カード内のテキスト ==========
-    auto& card = window.AddContainer();
-    card.SetPositionType(Lithos::Position::Absolute)
-        .SetPosition(50, 490)
-        .SetSize(800, 150)
-        .SetBackgroundColor(Lithos::White)
-        .SetBorderRadius(12)
-        .SetShadow(0, 4, 12, Lithos::Color(0, 0, 0, 0.1f))
-        .SetPadding(20);
+    auto scrollContainer = std::make_unique<Lithos::ScrollableContainer>();
+    scrollContainer->SetDisplay(Lithos::Display::Flex)
+                   .SetFlexDirection(Lithos::FlexDirection::Column)
+                   .SetGap(10)
+                   .SetPadding(10)
+                   .SetBackgroundColor(Lithos::White)
+                   .SetBorderColor(Lithos::Color(0.8f, 0.8f, 0.8f))
+                   .SetBorderWidth(1)
+                   .SetBorderRadius(8)
+                   .SetSize(300, 450)
+                   .SetPosition(550, 140);
 
-    auto cardTitle = std::make_unique<Lithos::TextNode>("Card with Text");
-    cardTitle->SetFontSize(24)
-              .SetFontWeight(Lithos::FontWeight::Bold)
-              .SetTextColor(Lithos::Color(0.1f, 0.1f, 0.2f))
-              .SetPosition(70, 510);
-    root.AddChild(std::move(cardTitle));
+    for (int i = 0; i < 20; i++) {
+        auto btn = std::make_unique<Lithos::Button>("Button #" + std::to_string(i + 1));
 
-    auto cardBody = std::make_unique<Lithos::TextNode>(
-        "This is a card containing text with shadows and rounded corners."
-    );
-    cardBody->SetFontSize(16)
-             .SetTextColor(Lithos::Color(0.3f, 0.3f, 0.4f))
-             .SetPosition(70, 545);
-    root.AddChild(std::move(cardBody));
+        // 色をバリエーション
+        Lithos::Color btnColor = Lithos::Color(
+            0.3f + (i % 3) * 0.2f,
+            0.3f + ((i + 1) % 3) * 0.2f,
+            0.3f + ((i + 2) % 3) * 0.2f
+        );
 
-    auto cardSubtext = std::make_unique<Lithos::TextNode>("Demonstrating TextNode integration");
-    cardSubtext->SetFontSize(14)
-                .SetFontStyle(Lithos::FontStyle::Italic)
-                .SetTextColor(Lithos::Color(0.5f, 0.5f, 0.6f))
-                .SetPosition(70, 575);
-    root.AddChild(std::move(cardSubtext));
+        int btnIndex = i + 1;
+        btn->SetNormalColor(btnColor)
+           .SetOnClick([btnIndex](Lithos::Button* b) {
+               std::cout << "Clicked button #" << btnIndex << std::endl;
+           })
+           .SetSize(280, 40);
+
+        scrollContainer->AddChild(std::move(btn));
+    }
+
+    root.AddChild(std::move(scrollContainer));
 
     window.Show();
     window.Run();
+
+    delete counter;
     return 0;
 }

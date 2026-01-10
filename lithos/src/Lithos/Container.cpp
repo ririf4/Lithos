@@ -63,7 +63,7 @@ namespace Lithos {
         return ref;
     }
 
-void Container::Layout() {
+    void Container::Layout() {
         Node::Layout();
 
         if (style.display == Display::Flex) {

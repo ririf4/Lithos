@@ -36,15 +36,21 @@ namespace Lithos {
         std::wstring ToWString(const std::string& utf8) {
             if (utf8.empty()) return L"";
             const int size_needed = MultiByteToWideChar(
-                CP_UTF8, 0,
-                utf8.data(), static_cast<int>(utf8.size()),
-                nullptr, 0
+                CP_UTF8,
+                0,
+                utf8.data(),
+                static_cast<int>(utf8.size()),
+                nullptr,
+                0
             );
             std::wstring wstr(size_needed, 0);
             MultiByteToWideChar(
-                CP_UTF8, 0,
-                utf8.data(), static_cast<int>(utf8.size()),
-                wstr.data(), size_needed
+                CP_UTF8,
+                0,
+                utf8.data(),
+                static_cast<int>(utf8.size()),
+                wstr.data(),
+                size_needed
             );
             return wstr;
         }
@@ -58,8 +64,7 @@ namespace Lithos {
           textFormat(nullptr),
           textLayout(nullptr),
           cachedTextWidth(0),
-          cachedTextHeight(0) {
-    }
+          cachedTextHeight(0) {}
 
     TextNode::TextNode(const std::string& text)
         : Node(),
@@ -74,9 +79,7 @@ namespace Lithos {
         CreateTextLayout();
     }
 
-    TextNode::~TextNode() {
-        ReleaseResources();
-    }
+    TextNode::~TextNode() { ReleaseResources(); }
 
     TextNode& TextNode::SetText(const std::string& text) {
         if (this->text != text) {
@@ -165,7 +168,9 @@ namespace Lithos {
             wordWrap = wrap;
             if (textFormat) {
                 textFormat->SetWordWrapping(
-                    wrap ? DWRITE_WORD_WRAPPING_WRAP : DWRITE_WORD_WRAPPING_NO_WRAP
+                    wrap
+                        ? DWRITE_WORD_WRAPPING_WRAP
+                        : DWRITE_WORD_WRAPPING_NO_WRAP
                 );
                 UpdateTextLayout();
             }
@@ -233,14 +238,14 @@ namespace Lithos {
 
         // Set word wrapping
         textFormat->SetWordWrapping(
-            wordWrap ? DWRITE_WORD_WRAPPING_WRAP : DWRITE_WORD_WRAPPING_NO_WRAP
+            wordWrap
+                ? DWRITE_WORD_WRAPPING_WRAP
+                : DWRITE_WORD_WRAPPING_NO_WRAP
         );
     }
 
     void TextNode::CreateTextLayout() {
-        if (!textFormat) {
-            CreateTextFormat();
-        }
+        if (!textFormat) { CreateTextFormat(); }
 
         if (textLayout) {
             textLayout->Release();
@@ -248,15 +253,17 @@ namespace Lithos {
         }
 
         auto* factory = GetDWriteFactory();
-        if (!factory || !textFormat) {
-            return;
-        }
+        if (!factory || !textFormat) { return; }
 
         std::wstring wText = ToWString(text);
 
         // Use current bounds width for layout, or large value if not set
-        float layoutWidth = bounds.width > 0 ? bounds.width : 10000.0f;
-        float layoutHeight = bounds.height > 0 ? bounds.height : 10000.0f;
+        float layoutWidth = bounds.width > 0
+                                ? bounds.width
+                                : 10000.0f;
+        float layoutHeight = bounds.height > 0
+                                 ? bounds.height
+                                 : 10000.0f;
 
         HRESULT hr = factory->CreateTextLayout(
             wText.c_str(),
@@ -298,14 +305,10 @@ namespace Lithos {
         cachedTextHeight = metrics.height;
 
         // Apply max lines if specified
-        if (maxLines > 0) {
-            textLayout->SetMaxHeight(metrics.height / metrics.lineCount * maxLines);
-        }
+        if (maxLines > 0) { textLayout->SetMaxHeight(metrics.height / metrics.lineCount * maxLines); }
     }
 
-    void TextNode::UpdateTextLayout() {
-        CreateTextLayout();
-    }
+    void TextNode::UpdateTextLayout() { CreateTextLayout(); }
 
     void TextNode::ReleaseResources() {
         if (textLayout) {
@@ -320,41 +323,184 @@ namespace Lithos {
 
     void TextNode::Layout() {
         // Update bounds from style first
-        if (style.width > 0) {
-            bounds.width = style.width;
-        }
-        if (style.height > 0) {
-            bounds.height = style.height;
-        }
+        if (style.width > 0) { bounds.width = style.width; }
+        if (style.height > 0) { bounds.height = style.height; }
 
-        if (!textFormat) {
-            CreateTextFormat();
-        }
+        if (!textFormat) { CreateTextFormat(); }
 
-        if (!textLayout || isDirty) {
-            CreateTextLayout();
-        }
+        if (!textLayout || isDirty) { CreateTextLayout(); }
 
         // If width/height not explicitly set, use text dimensions
-        if (style.width == 0) {
-            bounds.width = cachedTextWidth;
-        }
-        if (style.height == 0) {
-            bounds.height = cachedTextHeight;
-        }
+        if (style.width == 0) { bounds.width = cachedTextWidth; }
+        if (style.height == 0) { bounds.height = cachedTextHeight; }
 
         Node::Layout();
     }
 
     void TextNode::Draw(ID2D1DeviceContext* rt) {
-        if (!visible || text.empty() || !textLayout) {
-            return;
+        if (!visible || text.empty() || !textLayout) { return; }
+
+        // Draw shadow (if enabled)
+        if (style.shadowEnabled && style.shadowBlur > 0 && style.shadowColor.a > 0) {
+            ID2D1Bitmap1* contentBitmap = nullptr;
+            D2D1_BITMAP_PROPERTIES1 bitmapProps = D2D1::BitmapProperties1(
+                D2D1_BITMAP_OPTIONS_TARGET,
+                D2D1::PixelFormat(DXGI_FORMAT_B8G8R8A8_UNORM, D2D1_ALPHA_MODE_PREMULTIPLIED)
+            );
+
+            rt->CreateBitmap(
+                D2D1::SizeU(
+                    static_cast<UINT32>(bounds.width + style.shadowBlur * 4),
+                    static_cast<UINT32>(bounds.height + style.shadowBlur * 4)
+                ),
+                nullptr,
+                0,
+                bitmapProps,
+                &contentBitmap
+            );
+
+            if (contentBitmap) {
+                ID2D1Image* oldTarget = nullptr;
+                rt->GetTarget(&oldTarget);
+                rt->SetTarget(contentBitmap);
+                rt->Clear(D2D1::ColorF(0, 0, 0, 0));
+
+                const float tempX = style.shadowBlur * 2;
+                const float tempY = style.shadowBlur * 2;
+
+                ID2D1SolidColorBrush* pBrush = nullptr;
+                rt->CreateSolidColorBrush(
+                    D2D1::ColorF(
+                        style.backgroundColor.r,
+                        style.backgroundColor.g,
+                        style.backgroundColor.b,
+                        style.backgroundColor.a * style.opacity
+                    ),
+                    &pBrush
+                );
+
+                if (pBrush) {
+                    if (style.borderRadius > 0) {
+                        D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+                            D2D1::RectF(tempX, tempY, tempX + bounds.width, tempY + bounds.height),
+                            style.borderRadius,
+                            style.borderRadius
+                        );
+                        rt->FillRoundedRectangle(roundedRect, pBrush);
+                    }
+                    else {
+                        rt->FillRectangle(
+                            D2D1::RectF(tempX, tempY, tempX + bounds.width, tempY + bounds.height),
+                            pBrush
+                        );
+                    }
+                    pBrush->Release();
+                }
+
+                rt->SetTarget(oldTarget);
+
+                ID2D1Effect* shadowEffect = nullptr;
+                rt->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
+
+                if (shadowEffect) {
+                    shadowEffect->SetInput(0, contentBitmap);
+                    shadowEffect->SetValue(D2D1_SHADOW_PROP_BLUR_STANDARD_DEVIATION, style.shadowBlur);
+                    shadowEffect->SetValue(
+                        D2D1_SHADOW_PROP_COLOR,
+                        D2D1::Vector4F(
+                            style.shadowColor.r,
+                            style.shadowColor.g,
+                            style.shadowColor.b,
+                            style.shadowColor.a * style.opacity
+                        )
+                    );
+
+                    ID2D1Image* outputImage = nullptr;
+                    shadowEffect->GetOutput(&outputImage);
+
+                    rt->DrawImage(
+                        outputImage,
+                        D2D1::Point2F(
+                            bounds.x + style.shadowOffsetX - style.shadowBlur * 2,
+                            bounds.y + style.shadowOffsetY - style.shadowBlur * 2
+                        )
+                    );
+
+                    if (outputImage) outputImage->Release();
+                    shadowEffect->Release();
+                }
+
+                if (oldTarget) oldTarget->Release();
+                contentBitmap->Release();
+            }
         }
 
-        // Draw background/border (from base Node)
-        Node::Draw(rt);
+        // Draw background
+        if (style.backgroundColor.a > 0) {
+            ID2D1SolidColorBrush* pBrush = nullptr;
+            rt->CreateSolidColorBrush(
+                D2D1::ColorF(
+                    style.backgroundColor.r,
+                    style.backgroundColor.g,
+                    style.backgroundColor.b,
+                    style.backgroundColor.a * style.opacity
+                ),
+                &pBrush
+            );
 
-        // Create text brush
+            if (pBrush) {
+                if (style.borderRadius > 0) {
+                    D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+                        D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
+                        style.borderRadius,
+                        style.borderRadius
+                    );
+                    rt->FillRoundedRectangle(roundedRect, pBrush);
+                }
+                else {
+                    rt->FillRectangle(
+                        D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
+                        pBrush
+                    );
+                }
+                pBrush->Release();
+            }
+        }
+
+        // Draw border
+        if (style.borderWidth > 0 && style.borderColor.a > 0) {
+            ID2D1SolidColorBrush* pBrush = nullptr;
+            rt->CreateSolidColorBrush(
+                D2D1::ColorF(
+                    style.borderColor.r,
+                    style.borderColor.g,
+                    style.borderColor.b,
+                    style.borderColor.a * style.opacity
+                ),
+                &pBrush
+            );
+
+            if (pBrush) {
+                if (style.borderRadius > 0) {
+                    D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
+                        D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
+                        style.borderRadius,
+                        style.borderRadius
+                    );
+                    rt->DrawRoundedRectangle(roundedRect, pBrush, style.borderWidth);
+                }
+                else {
+                    rt->DrawRectangle(
+                        D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
+                        pBrush,
+                        style.borderWidth
+                    );
+                }
+                pBrush->Release();
+            }
+        }
+
+        // Draw text
         ID2D1SolidColorBrush* brush = nullptr;
         rt->CreateSolidColorBrush(
             D2D1::ColorF(
@@ -372,11 +518,7 @@ namespace Lithos {
             brush->Release();
         }
 
-        // Draw children if any
-        for (const auto& child : children) {
-            if (child->IsVisible()) {
-                child->Draw(rt);
-            }
-        }
+        // Draw children (only once)
+        for (const auto& child : children) { if (child->IsVisible()) { child->Draw(rt); } }
     }
 }

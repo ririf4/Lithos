@@ -17,6 +17,7 @@
 #include "Lithos/Node.hpp"
 #include <algorithm>
 #include <d2d1_1.h>
+#include <iostream>
 
 namespace Lithos {
     Node::Node()
@@ -325,7 +326,7 @@ namespace Lithos {
     }
 
     bool Node::OnEvent(const Event& event) {
-        for (auto it = children.rbegin(); it != children.rend(); ++it) { if ((*it)->OnEvent(event)) { return true; } }
+        for (auto it = children.rbegin(); it != children.rend(); ++it) {if ((*it)->OnEvent(event)) { return true; } }
         return false;
     }
 

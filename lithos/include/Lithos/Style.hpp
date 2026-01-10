@@ -17,7 +17,7 @@
 #pragma once
 #include <dwrite.h>
 #include <string>
-#include "Lithos/Color.hpp"
+#include "Color.hpp"
 
 namespace Lithos {
     enum class Display {

@@ -18,7 +18,9 @@
 #include <d2d1_1.h>
 #include <d3d11.h>
 #include <dxgi1_2.h>
+#include <iostream>
 #include <windows.h>
+#include <windowsx.h>
 #include "Lithos/Container.hpp"
 #include "Lithos/Event.hpp"
 #include "Lithos/Node.hpp"
@@ -325,6 +327,30 @@ namespace Lithos {
                     pImpl->OnMouseEvent(msg, wParam, lParam);
                     return 0;
 
+                case WM_MOUSEWHEEL: {
+                    Event evt;
+                    evt.type = EventType::MouseWheel;
+                    evt.wheelDelta = GET_WHEEL_DELTA_WPARAM(wParam);
+
+                    POINT pt;
+                    pt.x = GET_X_LPARAM(lParam);
+                    pt.y = GET_Y_LPARAM(lParam);
+                    ScreenToClient(hwnd, &pt);
+
+                    evt.mouseX = pt.x;
+                    evt.mouseY = pt.y;
+
+                    pImpl->rootNode->OnEvent(evt);
+                    InvalidateRect(hwnd, nullptr, FALSE);
+                    return 0;
+                }
+
+                case WM_SETCURSOR:
+                    if (LOWORD(lParam) == HTCLIENT) {
+                        return TRUE;
+                    }
+                    break;
+
                 case WM_DESTROY:
                     PostQuitMessage(0);
                     return 0;
@@ -402,5 +428,10 @@ namespace Lithos {
         pimpl->rootNode->AddChild(std::move(container));
         pimpl->rootNode->Layout();
         return ref;
+    }
+
+    void Window::SetCursor(LPCWSTR cursorType) {
+        HCURSOR cursor = LoadCursor(nullptr, cursorType);
+        ::SetCursor(cursor);
     }
 }
