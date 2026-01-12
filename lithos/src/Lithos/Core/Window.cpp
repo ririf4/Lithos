@@ -17,6 +17,8 @@
 #include "Lithos/Core/Window.hpp"
 #include "Lithos/PCH.hpp"
 #include <iostream>
+#include <chrono>
+#include <thread>
 #include "Lithos/Layout/Container.hpp"
 #include "Lithos/Core/Event.hpp"
 #include "Lithos/Core/Node.hpp"
@@ -72,6 +74,10 @@ namespace Lithos {
         std::unique_ptr<Node> rootNode;
         Node* focusedNode;
 
+        // Animation support
+        std::chrono::steady_clock::time_point lastFrameTime;
+        bool needsAnimation;
+
         Impl()
             : hwnd(nullptr),
               pD2DFactory(nullptr),
@@ -84,7 +90,8 @@ namespace Lithos {
               width(0),
               height(0),
               rootNode(std::make_unique<Node>()),
-              focusedNode(nullptr) {}
+              focusedNode(nullptr),
+              needsAnimation(false) {}
 
         ~Impl() {
             SafeRelease(pTargetBitmap);
@@ -315,6 +322,33 @@ namespace Lithos {
             }
         }
 
+        void UpdateAnimations() {
+            auto currentTime = std::chrono::steady_clock::now();
+
+            // Update all node transitions recursively
+            needsAnimation = UpdateNodeAnimations(rootNode.get(), currentTime);
+
+            // Trigger redraw if animations are active
+            if (needsAnimation) {
+                InvalidateRect(hwnd, nullptr, FALSE);
+            }
+
+            lastFrameTime = currentTime;
+        }
+
+        bool UpdateNodeAnimations(Node* node, std::chrono::steady_clock::time_point currentTime) {
+            bool hasActive = node->GetTransitionManager().Update(node, currentTime);
+
+            // Recursively update children
+            for (const auto& child : node->GetChildren()) {
+                if (UpdateNodeAnimations(child.get(), currentTime)) {
+                    hasActive = true;
+                }
+            }
+
+            return hasActive;
+        }
+
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             Impl* pImpl = nullptr;
 
@@ -440,9 +474,31 @@ namespace Lithos {
 
     void Window::Run() {
         MSG msg = {};
-        while (GetMessage(&msg, nullptr, 0, 0)) {
-            TranslateMessage(&msg);
-            DispatchMessage(&msg);
+        pimpl->lastFrameTime = std::chrono::steady_clock::now();
+
+        while (true) {
+            // Process all pending messages without blocking
+            while (PeekMessage(&msg, nullptr, 0, 0, PM_REMOVE)) {
+                if (msg.message == WM_QUIT) {
+                    return;
+                }
+                TranslateMessage(&msg);
+                DispatchMessage(&msg);
+            }
+
+            // Update animations (every frame)
+            pimpl->UpdateAnimations();
+
+            // Limit to ~60 FPS to avoid excessive CPU usage
+            auto now = std::chrono::steady_clock::now();
+            auto elapsed = std::chrono::duration<float>(
+                now - pimpl->lastFrameTime
+            ).count();
+
+            if (elapsed < 1.0f / 60.0f && !pimpl->needsAnimation) {
+                // Sleep briefly to avoid busy-waiting when no animations are active
+                std::this_thread::sleep_for(std::chrono::milliseconds(1));
+            }
         }
     }
 
