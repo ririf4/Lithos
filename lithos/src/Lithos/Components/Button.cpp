@@ -14,9 +14,9 @@
     limitations under the License.
  */
 
-#include "Lithos/Button.hpp"
+#include "Lithos/Components/Button.hpp"
 #include <iostream>
-#include "Lithos/TextNode.hpp"
+#include "Lithos/Components/TextNode.hpp"
 
 namespace Lithos {
     Button::Button()

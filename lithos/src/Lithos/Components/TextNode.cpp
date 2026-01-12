@@ -14,7 +14,7 @@
     limitations under the License.
  */
 
-#include "Lithos/TextNode.hpp"
+#include "Lithos/Components/TextNode.hpp"
 #include <iostream>
 
 namespace Lithos {

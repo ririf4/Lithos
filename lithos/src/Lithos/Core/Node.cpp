@@ -14,10 +14,9 @@
     limitations under the License.
  */
 
-#include "Lithos/Node.hpp"
+#include "Lithos/Core/Node.hpp"
 #include <algorithm>
-#include <d2d1_1.h>
-#include <iostream>
+#include "Lithos/PCH.hpp"
 
 namespace Lithos {
     Node::Node()

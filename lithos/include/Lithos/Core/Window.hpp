@@ -15,7 +15,11 @@
  */
 
 #pragma once
+#include <memory>
+#include <string>
+
 #include "Node.hpp"
+#include "Lithos/Layout/Container.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -24,21 +28,23 @@
 #endif
 
 namespace Lithos {
-    class LITHOS_API Container : public Node {
+    class LITHOS_API Window {
         public:
-            Container();
-            ~Container() override = default;
+            Window(int width, int height, const std::string& title);
+            ~Window();
 
-            Container& SetDisplay(Display display);
-            Container& SetPositionType(Position pos);
-            Container& SetFlexDirection(FlexDirection direction);
-            Container& SetJustifyContent(JustifyContent justify);
-            Container& SetAlignItems(AlignItems align);
-            Container& SetGap(float gap);
+            void Show() const;
+            void Run();
 
+            Node& GetRoot();
             Container& AddContainer();
 
-            void Layout() override;
-            void Draw(ID2D1DeviceContext* rt) override;
+            void SetCursor(LPCWSTR cursorType);
+            void SetFocusedNode(Node* node);
+            Node* GetFocusedNode();
+
+        private:
+            struct Impl;
+            std::unique_ptr<Impl> pimpl;
     };
 }

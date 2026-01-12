@@ -14,16 +14,12 @@
     limitations under the License.
  */
 
-#include "Lithos/Window.hpp"
-#include <d2d1_1.h>
-#include <d3d11.h>
-#include <dxgi1_2.h>
+#include "Lithos/Core/Window.hpp"
+#include "Lithos/PCH.hpp"
 #include <iostream>
-#include <windows.h>
-#include <windowsx.h>
-#include "Lithos/Container.hpp"
-#include "Lithos/Event.hpp"
-#include "Lithos/Node.hpp"
+#include "Lithos/Layout/Container.hpp"
+#include "Lithos/Core/Event.hpp"
+#include "Lithos/Core/Node.hpp"
 
 #pragma comment(lib, "d2d1.lib")
 #pragma comment(lib, "d3d11.lib")
@@ -74,6 +70,7 @@ namespace Lithos {
         int width;
         int height;
         std::unique_ptr<Node> rootNode;
+        Node* focusedNode;
 
         Impl()
             : hwnd(nullptr),
@@ -86,7 +83,8 @@ namespace Lithos {
               pTargetBitmap(nullptr),
               width(0),
               height(0),
-              rootNode(std::make_unique<Node>()) {}
+              rootNode(std::make_unique<Node>()),
+              focusedNode(nullptr) {}
 
         ~Impl() {
             SafeRelease(pTargetBitmap);
@@ -295,6 +293,28 @@ namespace Lithos {
             InvalidateRect(hwnd, nullptr, FALSE);
         }
 
+        void OnKeyEvent(UINT msg, WPARAM wParam, LPARAM lParam) {
+            Event evt;
+
+            if (msg == WM_KEYDOWN || msg == WM_KEYUP) {
+                evt.type = (msg == WM_KEYDOWN) ? EventType::KeyDown : EventType::KeyUp;
+                evt.key = static_cast<int>(wParam);
+
+                if (focusedNode) {
+                    focusedNode->OnEvent(evt);
+                    InvalidateRect(hwnd, nullptr, FALSE);
+                }
+            } else if (msg == WM_CHAR) {
+                evt.type = EventType::Char;
+                evt.character = static_cast<wchar_t>(wParam);
+
+                if (focusedNode) {
+                    focusedNode->OnEvent(evt);
+                    InvalidateRect(hwnd, nullptr, FALSE);
+                }
+            }
+        }
+
         static LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
             Impl* pImpl = nullptr;
 
@@ -344,6 +364,12 @@ namespace Lithos {
                     InvalidateRect(hwnd, nullptr, FALSE);
                     return 0;
                 }
+
+                case WM_KEYDOWN:
+                case WM_KEYUP:
+                case WM_CHAR:
+                    pImpl->OnKeyEvent(msg, wParam, lParam);
+                    return 0;
 
                 case WM_SETCURSOR:
                     if (LOWORD(lParam) == HTCLIENT) {
@@ -433,5 +459,13 @@ namespace Lithos {
     void Window::SetCursor(LPCWSTR cursorType) {
         HCURSOR cursor = LoadCursor(nullptr, cursorType);
         ::SetCursor(cursor);
+    }
+
+    void Window::SetFocusedNode(Node* node) {
+        pimpl->focusedNode = node;
+    }
+
+    Node* Window::GetFocusedNode() {
+        return pimpl->focusedNode;
     }
 }

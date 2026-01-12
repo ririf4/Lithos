@@ -15,11 +15,10 @@
  */
 
 #pragma once
-#include <d2d1_1.h>
 
-#include "Color.hpp"
 #include "Container.hpp"
-#include "Event.hpp"
+#include "Lithos/Core/Color.hpp"
+#include "Lithos/Core/Event.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)

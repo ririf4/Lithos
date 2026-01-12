@@ -33,6 +33,7 @@ namespace Lithos {
 
         KeyDown,
         KeyUp,
+        Char,
         WindowResize
     };
 
@@ -78,5 +79,6 @@ namespace Lithos {
         int windowHeight = 0;
 
         int key = 0;
+        wchar_t character = 0;
     };
 }

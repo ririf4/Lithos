@@ -16,7 +16,7 @@
 
 #pragma once
 #include <string>
-#include "Node.hpp"
+#include "../Core/Node.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)

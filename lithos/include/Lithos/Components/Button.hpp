@@ -17,8 +17,9 @@
 #pragma once
 #include <functional>
 #include <string>
-#include "Container.hpp"
-#include "Event.hpp"
+#include "Lithos/Core/Event.hpp"
+#include "Lithos/Core/Color.hpp"
+#include "Lithos/Layout/Container.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)

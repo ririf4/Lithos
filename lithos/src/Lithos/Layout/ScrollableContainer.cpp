@@ -18,7 +18,7 @@
 #define NOMINMAX
 #endif
 
-#include "Lithos/ScrollableContainer.hpp"
+#include "Lithos/Layout/ScrollableContainer.hpp"
 #include <algorithm>
 #include <iostream>
 

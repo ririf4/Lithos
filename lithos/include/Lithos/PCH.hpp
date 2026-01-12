@@ -1,0 +1,11 @@
+#pragma once
+#include <d2d1_1.h>
+#include <d3d11.h>
+#include <dwrite.h>
+#include <dxgi1_2.h>
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+#include <windows.h>
+#include <windowsx.h>
