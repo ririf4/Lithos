@@ -131,6 +131,10 @@ namespace Lithos {
         IDWriteTextFormat* textFormat;
         IDWriteTextLayout* textLayout;
 
+        // Performance optimization: cached text brush
+        mutable ID2D1SolidColorBrush* cachedTextBrush;  ///< Cached text brush
+        mutable Color cachedTextColor;                   ///< Cached text color
+
         void CreateTextFormat();
         void CreateTextLayout();
         void UpdateTextLayout();
