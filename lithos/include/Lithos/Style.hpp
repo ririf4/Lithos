@@ -20,113 +20,150 @@
 #include "Color.hpp"
 
 namespace Lithos {
+    /**
+     * @brief Display type for layout calculation
+     */
     enum class Display {
-        Block,
-        Flex,
-        Grid
+        Block,  ///< Block layout (default)
+        Flex,   ///< Flexbox layout
+        Grid    ///< Grid layout (not yet implemented)
     };
 
+    /**
+     * @brief Flex container direction
+     */
     enum class FlexDirection {
-        Row,
-        Column
+        Row,    ///< Arrange children horizontally
+        Column  ///< Arrange children vertically
     };
 
+    /**
+     * @brief Alignment of children along the main axis in flex layout
+     */
     enum class JustifyContent {
-        Start,
-        End,
-        Center,
-        SpaceBetween,
-        SpaceAround
+        Start,         ///< Align to start of container
+        End,           ///< Align to end of container
+        Center,        ///< Center in container
+        SpaceBetween,  ///< Distribute with space between items
+        SpaceAround    ///< Distribute with space around items
     };
 
+    /**
+     * @brief Alignment of children along the cross axis in flex layout
+     */
     enum class AlignItems {
-        Start,
-        End,
-        Center,
-        Stretch
+        Start,   ///< Align to start of cross axis
+        End,     ///< Align to end of cross axis
+        Center,  ///< Center on cross axis
+        Stretch  ///< Stretch to fill cross axis
     };
 
+    /**
+     * @brief Positioning type for nodes
+     */
     enum class Position {
-        Relative,
-        Absolute
+        Relative,  ///< Position relative to parent
+        Absolute   ///< Position absolute (ignore normal flow)
     };
 
+    /**
+     * @brief Font weight values mapped to DirectWrite font weights
+     */
     enum class FontWeight {
-        Thin = DWRITE_FONT_WEIGHT_THIN,
-        Light = DWRITE_FONT_WEIGHT_LIGHT,
-        Normal = DWRITE_FONT_WEIGHT_NORMAL,
-        Medium = DWRITE_FONT_WEIGHT_MEDIUM,
-        Bold = DWRITE_FONT_WEIGHT_BOLD,
-        ExtraBold = DWRITE_FONT_WEIGHT_EXTRA_BOLD,
-        Black = DWRITE_FONT_WEIGHT_BLACK
+        Thin = DWRITE_FONT_WEIGHT_THIN,        ///< Thin (100)
+        Light = DWRITE_FONT_WEIGHT_LIGHT,      ///< Light (300)
+        Normal = DWRITE_FONT_WEIGHT_NORMAL,    ///< Normal (400)
+        Medium = DWRITE_FONT_WEIGHT_MEDIUM,    ///< Medium (500)
+        Bold = DWRITE_FONT_WEIGHT_BOLD,        ///< Bold (700)
+        ExtraBold = DWRITE_FONT_WEIGHT_EXTRA_BOLD,  ///< Extra Bold (800)
+        Black = DWRITE_FONT_WEIGHT_BLACK       ///< Black (900)
     };
 
+    /**
+     * @brief Font style values mapped to DirectWrite font styles
+     */
     enum class FontStyle {
-        Normal = DWRITE_FONT_STYLE_NORMAL,
-        Italic = DWRITE_FONT_STYLE_ITALIC,
-        Oblique = DWRITE_FONT_STYLE_OBLIQUE
+        Normal = DWRITE_FONT_STYLE_NORMAL,   ///< Normal upright text
+        Italic = DWRITE_FONT_STYLE_ITALIC,   ///< Italic text
+        Oblique = DWRITE_FONT_STYLE_OBLIQUE  ///< Oblique (slanted) text
     };
 
+    /**
+     * @brief Text alignment options
+     */
     enum class TextAlign {
-        Left,
-        Center,
-        Right,
-        Justify
+        Left,     ///< Align text to the left
+        Center,   ///< Center text
+        Right,    ///< Align text to the right
+        Justify   ///< Justify text
     };
 
+    /**
+     * @brief Comprehensive style properties for UI nodes
+     *
+     * Contains all styling properties including layout, spacing, colors, borders,
+     * shadows, and typography. Used by Node and its derived classes.
+     */
     struct Style {
-        Display display = Display::Block;
-        FlexDirection flexDirection = FlexDirection::Row;
-        JustifyContent justifyContent = JustifyContent::Start;
-        AlignItems alignItems = AlignItems::Stretch;
-        Position position = Position::Relative;
+        // ========== Layout Properties ==========
+        Display display = Display::Block;                    ///< Display/layout type
+        FlexDirection flexDirection = FlexDirection::Row;    ///< Flex direction (Row/Column)
+        JustifyContent justifyContent = JustifyContent::Start; ///< Main axis alignment
+        AlignItems alignItems = AlignItems::Stretch;         ///< Cross axis alignment
+        Position position = Position::Relative;              ///< Positioning type
 
-        float width = 0;    // 0 = auto
-        float height = 0;   // 0 = auto
-        float minWidth = 0;
-        float minHeight = 0;
-        float maxWidth = 0;
-        float maxHeight = 0;
+        // ========== Dimensions ==========
+        float width = 0;     ///< Width (0 = auto)
+        float height = 0;    ///< Height (0 = auto)
+        float minWidth = 0;  ///< Minimum width constraint
+        float minHeight = 0; ///< Minimum height constraint
+        float maxWidth = 0;  ///< Maximum width constraint (0 = none)
+        float maxHeight = 0; ///< Maximum height constraint (0 = none)
 
-        float padding = 0;
-        float paddingTop = 0;
-        float paddingRight = 0;
-        float paddingBottom = 0;
-        float paddingLeft = 0;
+        // ========== Padding (inner spacing) ==========
+        float padding = 0;        ///< Uniform padding (overridden by specific sides)
+        float paddingTop = 0;     ///< Top padding
+        float paddingRight = 0;   ///< Right padding
+        float paddingBottom = 0;  ///< Bottom padding
+        float paddingLeft = 0;    ///< Left padding
 
-        float margin = 0;
-        float marginTop = 0;
-        float marginRight = 0;
-        float marginBottom = 0;
-        float marginLeft = 0;
+        // ========== Margin (outer spacing) ==========
+        float margin = 0;        ///< Uniform margin (overridden by specific sides)
+        float marginTop = 0;     ///< Top margin
+        float marginRight = 0;   ///< Right margin
+        float marginBottom = 0;  ///< Bottom margin
+        float marginLeft = 0;    ///< Left margin
 
-        float gap = 0;
+        // ========== Flexbox Properties ==========
+        float gap = 0;   ///< Gap between flex children
+        float flex = 0;  ///< Flex grow factor (not fully implemented)
 
-        float left = 0;
-        float top = 0;
-        float right = 0;
-        float bottom = 0;
+        // ========== Positioning Offsets ==========
+        float left = 0;    ///< Left offset (for absolute/relative positioning)
+        float top = 0;     ///< Top offset (for absolute/relative positioning)
+        float right = 0;   ///< Right offset (not yet implemented)
+        float bottom = 0;  ///< Bottom offset (not yet implemented)
 
-        Color backgroundColor = Transparent;
-        Color borderColor = Transparent;
-        float borderWidth = 0;
-        float borderRadius = 0;
-        float opacity = 1.0f;
+        // ========== Visual Properties ==========
+        Color backgroundColor = Transparent;  ///< Background fill color
+        Color borderColor = Transparent;      ///< Border stroke color
+        float borderWidth = 0;                ///< Border thickness
+        float borderRadius = 0;               ///< Corner radius for rounded borders
+        float opacity = 1.0f;                 ///< Opacity (0.0 = transparent, 1.0 = opaque)
 
-        // Shadow
-        bool shadowEnabled = false;
-        float shadowOffsetX = 0;
-        float shadowOffsetY = 0;
-        float shadowBlur = 0;
-        Color shadowColor = Color(0, 0, 0, 0.5f);
+        // ========== Shadow Properties ==========
+        bool shadowEnabled = false;              ///< Enable/disable shadow rendering
+        float shadowOffsetX = 0;                 ///< Shadow horizontal offset
+        float shadowOffsetY = 0;                 ///< Shadow vertical offset
+        float shadowBlur = 0;                    ///< Shadow blur radius
+        Color shadowColor = Color(0, 0, 0, 0.5f); ///< Shadow color
 
-        Color textColor = Black;
-        float fontSize = 16;
-        std::string fontFamily = "Arial";
-        FontWeight fontWeight = FontWeight::Normal;
-        TextAlign textAlign = TextAlign::Left;
-        FontStyle fontStyle = FontStyle::Normal;
-
-        float flex = 0;
+        // ========== Typography Properties ==========
+        Color textColor = Black;             ///< Text color
+        float fontSize = 16;                 ///< Font size in points
+        std::string fontFamily = "Arial";    ///< Font family name
+        FontWeight fontWeight = FontWeight::Normal;  ///< Font weight
+        TextAlign textAlign = TextAlign::Left;       ///< Text alignment
+        FontStyle fontStyle = FontStyle::Normal;     ///< Font style (Normal/Italic/Oblique)
     };
 }
