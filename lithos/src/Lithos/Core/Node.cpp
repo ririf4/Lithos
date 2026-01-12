@@ -23,7 +23,17 @@ namespace Lithos {
         : parent(nullptr),
           visible(true),
           isDirty(true),
-          isLayouting(false) {}
+          isLayouting(false),
+          cachedBackgroundBrush(nullptr),
+          cachedBackgroundColor(Transparent),
+          cachedBorderBrush(nullptr),
+          cachedBorderColor(Transparent) {}
+
+    Node::~Node() {
+        // Release cached brushes
+        SafeRelease(cachedBackgroundBrush);
+        SafeRelease(cachedBorderBrush);
+    }
 
     void Node::AddChild(std::unique_ptr<Node> child) {
         child->parent = this;
@@ -131,6 +141,10 @@ namespace Lithos {
 
     void Node::Layout() {
         if (isLayouting) return;
+
+        // Performance optimization: skip layout if not dirty
+        if (!isDirty) return;
+
         isLayouting = true;
 
         if (style.width > 0) { bounds.width = style.width; }
@@ -151,7 +165,12 @@ namespace Lithos {
             }
         }
 
-        for (const auto& child : children) { child->Layout(); }
+        // Only layout children that are dirty
+        for (const auto& child : children) {
+            if (child->isDirty) {
+                child->Layout();
+            }
+        }
 
         isDirty = false;
         isLayouting = false;
@@ -257,15 +276,19 @@ namespace Lithos {
         }
 
         if (style.backgroundColor.a > 0) {
-            ID2D1SolidColorBrush* pBrush = nullptr;
-            dc->CreateSolidColorBrush(
-                D2D1::ColorF(
-                    style.backgroundColor.r,
-                    style.backgroundColor.g,
-                    style.backgroundColor.b,
-                    style.backgroundColor.a * style.opacity
-                ),
-                &pBrush
+            // Use cached brush for background
+            Color effectiveColor(
+                style.backgroundColor.r,
+                style.backgroundColor.g,
+                style.backgroundColor.b,
+                style.backgroundColor.a * style.opacity
+            );
+
+            ID2D1SolidColorBrush* pBrush = GetOrCreateBrush(
+                dc,
+                effectiveColor,
+                cachedBackgroundBrush,
+                cachedBackgroundColor
             );
 
             if (pBrush) {
@@ -283,20 +306,24 @@ namespace Lithos {
                         pBrush
                     );
                 }
-                pBrush->Release();
+                // Note: Don't release cached brush
             }
         }
 
         if (style.borderWidth > 0 && style.borderColor.a > 0) {
-            ID2D1SolidColorBrush* pBrush = nullptr;
-            dc->CreateSolidColorBrush(
-                D2D1::ColorF(
-                    style.borderColor.r,
-                    style.borderColor.g,
-                    style.borderColor.b,
-                    style.borderColor.a * style.opacity
-                ),
-                &pBrush
+            // Use cached brush for border
+            Color effectiveColor(
+                style.borderColor.r,
+                style.borderColor.g,
+                style.borderColor.b,
+                style.borderColor.a * style.opacity
+            );
+
+            ID2D1SolidColorBrush* pBrush = GetOrCreateBrush(
+                dc,
+                effectiveColor,
+                cachedBorderBrush,
+                cachedBorderColor
             );
 
             if (pBrush) {
@@ -315,7 +342,7 @@ namespace Lithos {
                         style.borderWidth
                     );
                 }
-                pBrush->Release();
+                // Note: Don't release cached brush
             }
         }
 
@@ -344,5 +371,32 @@ namespace Lithos {
         auto root = this;
         while (root->parent) { root = root->parent; }
         root->Layout();
+    }
+
+    ID2D1SolidColorBrush* Node::GetOrCreateBrush(
+        ID2D1DeviceContext* dc,
+        const Color& color,
+        ID2D1SolidColorBrush*& cachedBrush,
+        Color& cachedColor
+    ) const {
+        // Check if we can reuse the cached brush
+        if (cachedBrush &&
+            cachedColor.r == color.r &&
+            cachedColor.g == color.g &&
+            cachedColor.b == color.b &&
+            cachedColor.a == color.a) {
+            return cachedBrush;
+        }
+
+        // Release old brush and create new one
+        SafeRelease(cachedBrush);
+
+        dc->CreateSolidColorBrush(
+            D2D1::ColorF(color.r, color.g, color.b, color.a),
+            &cachedBrush
+        );
+
+        cachedColor = color;
+        return cachedBrush;
     }
 }
