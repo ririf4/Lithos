@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.15)
 project(Lithos)
 
 set(CMAKE_CXX_STANDARD 23)
@@ -14,6 +14,10 @@ add_library(Lithos SHARED
         lithos/include/Lithos/Core/Event.hpp
         lithos/include/Lithos/Core/Style.hpp
 
+        lithos/include/Lithos/Core/Animation/Easing.hpp
+        lithos/include/Lithos/Core/Animation/AnimatableProperty.hpp
+        lithos/include/Lithos/Core/Animation/Transition.hpp
+
         lithos/include/Lithos/Layout/Container.hpp
         lithos/include/Lithos/Layout/ScrollableContainer.hpp
 
@@ -26,6 +30,8 @@ add_library(Lithos SHARED
         # CPP Source Files
         lithos/src/Lithos/Core/Window.cpp
         lithos/src/Lithos/Core/Node.cpp
+
+        lithos/src/Lithos/Core/Animation/Transition.cpp
 
         lithos/src/Lithos/Layout/Container.cpp
         lithos/src/Lithos/Layout/ScrollableContainer.cpp
@@ -71,5 +77,10 @@ add_executable(ToggleTest
         example/toggle_test.cpp
 )
 
+add_executable(TransitionDemo
+        example/transition_demo.cpp
+)
+
 target_link_libraries(LithosTestAndExample PRIVATE Lithos)
 target_link_libraries(ToggleTest PRIVATE Lithos)
+target_link_libraries(TransitionDemo PRIVATE Lithos)

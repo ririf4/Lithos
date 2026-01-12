@@ -21,6 +21,7 @@
 #include "Event.hpp"
 #include "Rect.hpp"
 #include "Style.hpp"
+#include "Animation/Transition.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -165,6 +166,61 @@ namespace Lithos {
          */
         bool HitTest(float x, float y) const;
 
+        // ========== Animation and Transitions ==========
+
+        /**
+         * @brief Enables smooth transition for a property
+         *
+         * When the property changes, it will smoothly animate to the new value
+         * instead of changing instantly. Similar to CSS transition property.
+         *
+         * @param property Property to animate
+         * @param duration Transition duration in seconds (default: 0.3)
+         * @param easing Easing function (default: Ease)
+         * @return Reference to this node for chaining
+         *
+         * @example
+         * node.Transition(AnimatableProperty::Opacity, 0.5f, Easing::EaseOut)
+         *     .SetOpacity(0.0f);  // Will fade out smoothly over 0.5 seconds
+         */
+        Node& Transition(AnimatableProperty property,
+                        float duration = 0.3f,
+                        EasingFunction easing = Easing::Ease);
+
+        /**
+         * @brief Enables transitions for all animatable properties
+         *
+         * All property changes will be smoothly animated.
+         *
+         * @param duration Transition duration in seconds (default: 0.3)
+         * @param easing Easing function (default: Ease)
+         * @return Reference to this node for chaining
+         */
+        Node& TransitionAll(float duration = 0.3f,
+                           EasingFunction easing = Easing::Ease);
+
+        /**
+         * @brief Removes transition from a property
+         *
+         * After calling this, changes to the property will be instant again.
+         *
+         * @param property Property to remove transition from
+         * @return Reference to this node for chaining
+         */
+        Node& RemoveTransition(AnimatableProperty property);
+
+        /**
+         * @brief Gets the transition manager for advanced configuration
+         * @return Reference to the transition manager
+         */
+        TransitionManager& GetTransitionManager() { return transitionManager; }
+
+        /**
+         * @brief Gets the transition manager (const version)
+         * @return Const reference to the transition manager
+         */
+        const TransitionManager& GetTransitionManager() const { return transitionManager; }
+
     protected:
         Node* parent;                                ///< Parent node (nullptr for root)
         std::vector<std::unique_ptr<Node>> children; ///< Child nodes
@@ -173,6 +229,7 @@ namespace Lithos {
         bool visible;                                ///< Visibility flag
         bool isDirty;                                ///< Needs redraw flag
         bool isLayouting;                            ///< Layout in progress guard
+        TransitionManager transitionManager;         ///< Manages property transitions
 
         // Performance optimization: cached brushes
         mutable ID2D1SolidColorBrush* cachedBackgroundBrush;  ///< Cached background brush
@@ -193,6 +250,8 @@ namespace Lithos {
          */
         void RequestLayout();
 
+        // Make TransitionManager a friend so it can access style directly
+        friend class TransitionManager;
         /**
          * @brief Safely releases a COM interface pointer
          * @tparam T Type of the interface

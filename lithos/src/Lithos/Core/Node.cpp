@@ -42,16 +42,52 @@ namespace Lithos {
     }
 
     Node& Node::SetPosition(const float x, const float y) {
-        style.left = x;
-        style.top = y;
-        RequestLayout();
+        // Check for Position transition
+        transitionManager.OnPropertyChange(this, AnimatableProperty::Position, std::make_pair(x, y));
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::Position)) {
+            // Also check individual Left/Top transitions
+            transitionManager.OnPropertyChange(this, AnimatableProperty::Left, x);
+            transitionManager.OnPropertyChange(this, AnimatableProperty::Top, y);
+
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Left)) {
+                style.left = x;
+            }
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Top)) {
+                style.top = y;
+            }
+
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Left) &&
+                !transitionManager.HasActiveTransition(AnimatableProperty::Top)) {
+                RequestLayout();
+            }
+        }
+
         return *this;
     }
 
     Node& Node::SetSize(const float width, const float height) {
-        style.width = width;
-        style.height = height;
-        RequestLayout();
+        // Check for Size transition
+        transitionManager.OnPropertyChange(this, AnimatableProperty::Size, std::make_pair(width, height));
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::Size)) {
+            // Also check individual Width/Height transitions
+            transitionManager.OnPropertyChange(this, AnimatableProperty::Width, width);
+            transitionManager.OnPropertyChange(this, AnimatableProperty::Height, height);
+
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Width)) {
+                style.width = width;
+            }
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Height)) {
+                style.height = height;
+            }
+
+            if (!transitionManager.HasActiveTransition(AnimatableProperty::Width) &&
+                !transitionManager.HasActiveTransition(AnimatableProperty::Height)) {
+                RequestLayout();
+            }
+        }
+
         return *this;
     }
 
@@ -88,26 +124,48 @@ namespace Lithos {
     }
 
     Node& Node::SetBackgroundColor(const Color color) {
-        style.backgroundColor = color;
-        MarkDirty();
+        // Check if transition is configured for this property
+        transitionManager.OnPropertyChange(this, AnimatableProperty::BackgroundColor, color);
+
+        // If no active transition, apply immediately
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::BackgroundColor)) {
+            style.backgroundColor = color;
+            MarkDirty();
+        }
+
         return *this;
     }
 
     Node& Node::SetBorderColor(const Color color) {
-        style.borderColor = color;
-        MarkDirty();
+        transitionManager.OnPropertyChange(this, AnimatableProperty::BorderColor, color);
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderColor)) {
+            style.borderColor = color;
+            MarkDirty();
+        }
+
         return *this;
     }
 
     Node& Node::SetBorderWidth(const float width) {
-        style.borderWidth = width;
-        MarkDirty();
+        transitionManager.OnPropertyChange(this, AnimatableProperty::BorderWidth, width);
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderWidth)) {
+            style.borderWidth = width;
+            MarkDirty();
+        }
+
         return *this;
     }
 
     Node& Node::SetBorderRadius(const float radius) {
-        style.borderRadius = radius;
-        MarkDirty();
+        transitionManager.OnPropertyChange(this, AnimatableProperty::BorderRadius, radius);
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderRadius)) {
+            style.borderRadius = radius;
+            MarkDirty();
+        }
+
         return *this;
     }
 
@@ -118,8 +176,17 @@ namespace Lithos {
     }
 
     Node& Node::SetOpacity(const float opacity) {
-        style.opacity = std::clamp(opacity, 0.0f, 1.0f);
-        MarkDirty();
+        float clampedOpacity = std::clamp(opacity, 0.0f, 1.0f);
+
+        // Check if transition is configured for this property
+        transitionManager.OnPropertyChange(this, AnimatableProperty::Opacity, clampedOpacity);
+
+        // If no active transition, apply immediately
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::Opacity)) {
+            style.opacity = clampedOpacity;
+            MarkDirty();
+        }
+
         return *this;
     }
 
@@ -373,6 +440,32 @@ namespace Lithos {
         root->Layout();
     }
 
+    // ========== Transition API Implementation ==========
+
+    Node& Node::Transition(AnimatableProperty property, float duration, EasingFunction easing) {
+        TransitionConfig config(property);
+        config.SetDuration(duration).SetEasing(easing);
+        transitionManager.AddTransition(config);
+        return *this;
+    }
+
+    Node& Node::TransitionAll(float duration, EasingFunction easing) {
+        // Add transitions for all commonly animated properties
+        Transition(AnimatableProperty::Opacity, duration, easing);
+        Transition(AnimatableProperty::Width, duration, easing);
+        Transition(AnimatableProperty::Height, duration, easing);
+        Transition(AnimatableProperty::Left, duration, easing);
+        Transition(AnimatableProperty::Top, duration, easing);
+        Transition(AnimatableProperty::BackgroundColor, duration, easing);
+        Transition(AnimatableProperty::BorderColor, duration, easing);
+        Transition(AnimatableProperty::BorderWidth, duration, easing);
+        Transition(AnimatableProperty::BorderRadius, duration, easing);
+        return *this;
+    }
+
+    Node& Node::RemoveTransition(AnimatableProperty property) {
+        transitionManager.RemoveTransition(property);
+        return *this;
     ID2D1SolidColorBrush* Node::GetOrCreateBrush(
         ID2D1DeviceContext* dc,
         const Color& color,
