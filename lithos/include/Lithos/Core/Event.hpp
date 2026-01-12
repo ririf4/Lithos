@@ -25,35 +25,50 @@
 #endif
 
 namespace Lithos {
+    /**
+     * @brief Types of events that can be dispatched to UI nodes
+     */
     enum class EventType {
-        MouseDown,
-        MouseUp,
-        MouseMove,
-        MouseWheel,
+        MouseDown,      ///< Mouse button pressed
+        MouseUp,        ///< Mouse button released
+        MouseMove,      ///< Mouse cursor moved
+        MouseWheel,     ///< Mouse wheel scrolled
 
-        KeyDown,
-        KeyUp,
-        Char,
-        WindowResize
+        KeyDown,        ///< Keyboard key pressed
+        KeyUp,          ///< Keyboard key released
+        WindowResize    ///< Window size changed
     };
 
+    /**
+     * @brief Mouse button identifiers
+     */
     enum class MouseButton {
-        Left,
-        Right,
-        Middle,
-        None
+        Left,    ///< Left mouse button
+        Right,   ///< Right mouse button
+        Middle,  ///< Middle mouse button (wheel button)
+        None     ///< No button (for mouse move events)
     };
 
+    /**
+     * @brief Cursor types for visual feedback
+     *
+     * Maps to Windows standard cursor types (IDC_*)
+     */
     enum class CursorType {
-        Arrow,      // IDC_ARROW
-        Hand,       // IDC_HAND
-        IBeam,      // IDC_IBEAM
-        Wait,       // IDC_WAIT
-        Cross,      // IDC_CROSS
-        SizeAll,    // IDC_SIZEALL
-        No          // IDC_NO
+        Arrow,      ///< Standard arrow cursor (IDC_ARROW)
+        Hand,       ///< Hand pointer cursor (IDC_HAND)
+        IBeam,      ///< Text selection cursor (IDC_IBEAM)
+        Wait,       ///< Wait/busy cursor (IDC_WAIT)
+        Cross,      ///< Crosshair cursor (IDC_CROSS)
+        SizeAll,    ///< Move cursor (IDC_SIZEALL)
+        No          ///< Prohibited/no action cursor (IDC_NO)
     };
 
+    /**
+     * @brief Converts CursorType enum to Windows cursor resource identifier
+     * @param type The cursor type to convert
+     * @return Windows cursor resource identifier (LPCWSTR)
+     */
     inline LPCWSTR GetWindowsCursor(CursorType type) {
         switch (type) {
             case CursorType::Hand:    return IDC_HAND;
@@ -67,18 +82,26 @@ namespace Lithos {
         }
     }
 
+    /**
+     * @brief Event data structure containing all event information
+     *
+     * This structure is passed to Node::OnEvent() and contains all relevant
+     * information about the event being dispatched.
+     */
     struct Event {
-        EventType type;
+        EventType type;  ///< Type of the event
 
-        int mouseX = 0;
-        int mouseY = 0;
-        MouseButton button = MouseButton::None;
-        int wheelDelta = 0;
+        // Mouse event data
+        int mouseX = 0;          ///< Mouse X coordinate (window-relative)
+        int mouseY = 0;          ///< Mouse Y coordinate (window-relative)
+        MouseButton button = MouseButton::None;  ///< Mouse button involved
+        int wheelDelta = 0;      ///< Wheel scroll delta (120 units per notch)
 
-        int windowWidth = 0;
-        int windowHeight = 0;
+        // Window event data
+        int windowWidth = 0;     ///< Window width (for WindowResize events)
+        int windowHeight = 0;    ///< Window height (for WindowResize events)
 
-        int key = 0;
-        wchar_t character = 0;
+        // Keyboard event data
+        int key = 0;             ///< Virtual key code (for KeyDown/KeyUp events)
     };
 }

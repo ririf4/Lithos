@@ -305,7 +305,9 @@ namespace Lithos {
         cachedTextHeight = metrics.height;
 
         // Apply max lines if specified
-        if (maxLines > 0) { textLayout->SetMaxHeight(metrics.height / metrics.lineCount * maxLines); }
+        if (maxLines > 0 && metrics.lineCount > 0) {
+            textLayout->SetMaxHeight(metrics.height / metrics.lineCount * maxLines);
+        }
     }
 
     void TextNode::UpdateTextLayout() { CreateTextLayout(); }

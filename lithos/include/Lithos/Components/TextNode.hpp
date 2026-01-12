@@ -25,10 +25,29 @@
 #endif
 
 namespace Lithos {
+    /**
+     * @brief Text rendering node with DirectWrite integration
+     *
+     * TextNode provides high-quality text rendering using DirectWrite.
+     * Features include:
+     * - Rich typography (font family, size, weight, style)
+     * - Text alignment (left, center, right, justify)
+     * - Word wrapping and line limiting
+     * - Automatic size calculation based on text content
+     * - Full style inheritance from Node (background, borders, shadows)
+     *
+     * @note Text layout is cached and only recreated when properties change.
+     */
     class LITHOS_API TextNode : public Node {
     public:
         TextNode();
+
+        /**
+         * @brief Constructs a TextNode with initial text content
+         * @param text Initial text string (UTF-8 encoded)
+         */
         explicit TextNode(const std::string& text);
+
         ~TextNode() override;
 
         TextNode(const TextNode&) = delete;
@@ -36,28 +55,69 @@ namespace Lithos {
         TextNode(TextNode&&) = default;
         TextNode& operator=(TextNode&&) = default;
 
-        // Text content
+        // ========== Text Content ==========
+
+        /**
+         * @brief Sets the text content
+         * @param text UTF-8 encoded text string
+         * @return Reference to this TextNode for method chaining
+         */
         TextNode& SetText(const std::string& text);
+
+        /**
+         * @brief Gets the current text content
+         * @return Const reference to the text string
+         */
         const std::string& GetText() const { return text; }
 
-        // Font properties (delegates to style)
+        // ========== Font Properties ==========
+
+        /** @brief Sets font family name (e.g., "Arial", "Segoe UI") */
         TextNode& SetFontFamily(const std::string& family);
+        /** @brief Sets font size in points */
         TextNode& SetFontSize(float size);
+        /** @brief Sets font weight (Thin, Light, Normal, Bold, etc.) */
         TextNode& SetFontWeight(FontWeight weight);
+        /** @brief Sets font style (Normal, Italic, Oblique) */
         TextNode& SetFontStyle(FontStyle fontStyle);
 
-        // Text styling (delegates to style)
+        // ========== Text Styling ==========
+
+        /** @brief Sets text color */
         TextNode& SetTextColor(Color color);
+        /** @brief Sets text alignment (Left, Center, Right, Justify) */
         TextNode& SetTextAlign(TextAlign align);
 
-        // Text wrapping
+        // ========== Text Wrapping ==========
+
+        /**
+         * @brief Enables or disables word wrapping
+         * @param wrap true to enable word wrapping, false for single line
+         * @return Reference to this TextNode for method chaining
+         */
         TextNode& SetWordWrap(bool wrap);
+
+        /**
+         * @brief Sets maximum number of lines to display
+         * @param maxLines Maximum line count (0 = unlimited)
+         * @return Reference to this TextNode for method chaining
+         */
         TextNode& SetMaxLines(int maxLines);
 
+        /** @brief Checks if word wrapping is enabled */
         bool GetWordWrap() const { return wordWrap; }
+        /** @brief Gets the maximum line limit */
         int GetMaxLines() const { return maxLines; }
 
+        /**
+         * @brief Calculates text layout and updates bounds
+         */
         void Layout() override;
+
+        /**
+         * @brief Renders the text with background, borders, and shadows
+         * @param rt Direct2D device context
+         */
         void Draw(ID2D1DeviceContext* rt) override;
 
     private:

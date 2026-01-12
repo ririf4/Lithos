@@ -27,6 +27,22 @@
 #endif
 
 namespace Lithos {
+    /**
+     * @brief Scrollable container with vertical scrolling and scrollbar
+     *
+     * ScrollableContainer extends Container to provide scrolling functionality:
+     * - Vertical scrolling with mouse wheel support
+     * - Draggable scrollbar with visual feedback
+     * - Customizable scrollbar appearance (width, colors)
+     * - Automatic content size calculation
+     * - Clipped rendering (content outside bounds is hidden)
+     * - Scroll offset transformation for child events
+     *
+     * Content that exceeds the container bounds can be scrolled vertically.
+     * Horizontal scrolling is supported but currently only vertical scrollbar is rendered.
+     *
+     * @note ScrollableContainer implements a subset of scrolling features (vertical only).
+     */
     class LITHOS_API ScrollableContainer : public Container {
         public:
             ScrollableContainer();
@@ -37,31 +53,51 @@ namespace Lithos {
             ScrollableContainer(ScrollableContainer&&) = delete;
             ScrollableContainer& operator=(ScrollableContainer&&) = delete;
 
-            // Scroll control
+            // ========== Scroll Control ==========
+
+            /** @brief Sets horizontal scroll position */
             ScrollableContainer& SetScrollX(float x);
+            /** @brief Sets vertical scroll position */
             ScrollableContainer& SetScrollY(float y);
+            /** @brief Scrolls by delta amounts (dx, dy) */
             ScrollableContainer& ScrollBy(float dx, float dy);
 
+            /** @brief Gets current horizontal scroll offset */
             float GetScrollX() const { return scrollX; }
+            /** @brief Gets current vertical scroll offset */
             float GetScrollY() const { return scrollY; }
 
-            // Scrollbar styling
+            // ========== Scrollbar Styling ==========
+
+            /** @brief Sets scrollbar width in pixels */
             ScrollableContainer& SetScrollbarWidth(float width);
+            /** @brief Sets scrollbar thumb color */
             ScrollableContainer& SetScrollbarColor(Color color);
+            /** @brief Sets scrollbar track background color */
             ScrollableContainer& SetScrollbarTrackColor(Color color);
 
+            /** @brief Gets scrollbar width */
             float GetScrollbarWidth() const { return scrollbarWidth; }
 
-            // Enable/disable scrollbars
+            // ========== Scrollbar Visibility ==========
+
+            /** @brief Shows or hides the scrollbar */
             ScrollableContainer& SetShowScrollbar(bool show);
+            /** @brief Checks if scrollbar is visible */
             bool GetShowScrollbar() const { return showScrollbar; }
 
-            // Mouse wheel sensitivity
+            // ========== Mouse Wheel Configuration ==========
+
+            /** @brief Sets mouse wheel scroll sensitivity (pixels per wheel notch) */
             ScrollableContainer& SetWheelScrollSpeed(float speed);
+            /** @brief Gets mouse wheel scroll speed */
             float GetWheelScrollSpeed() const { return wheelScrollSpeed; }
 
+            /** @brief Performs layout and calculates content size */
             void Layout() override;
+            /** @brief Renders with clipping and scroll offset transformation */
             void Draw(ID2D1DeviceContext* rt) override;
+            /** @brief Handles scrollbar dragging and mouse wheel events */
             bool OnEvent(const Event& event) override;
 
         private:
