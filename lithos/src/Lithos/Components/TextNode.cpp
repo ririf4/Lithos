@@ -63,6 +63,8 @@ namespace Lithos {
           maxLines(0),
           textFormat(nullptr),
           textLayout(nullptr),
+          cachedTextBrush(nullptr),
+          cachedTextColor(Transparent),
           cachedTextWidth(0),
           cachedTextHeight(0) {}
 
@@ -73,13 +75,22 @@ namespace Lithos {
           maxLines(0),
           textFormat(nullptr),
           textLayout(nullptr),
+          cachedTextBrush(nullptr),
+          cachedTextColor(Transparent),
           cachedTextWidth(0),
           cachedTextHeight(0) {
         CreateTextFormat();
         CreateTextLayout();
     }
 
-    TextNode::~TextNode() { ReleaseResources(); }
+    TextNode::~TextNode() {
+        ReleaseResources();
+        // Release cached text brush
+        if (cachedTextBrush) {
+            cachedTextBrush->Release();
+            cachedTextBrush = nullptr;
+        }
+    }
 
     TextNode& TextNode::SetText(const std::string& text) {
         if (this->text != text) {
@@ -502,22 +513,25 @@ namespace Lithos {
             }
         }
 
-        // Draw text
-        ID2D1SolidColorBrush* brush = nullptr;
-        rt->CreateSolidColorBrush(
-            D2D1::ColorF(
-                style.textColor.r,
-                style.textColor.g,
-                style.textColor.b,
-                style.textColor.a * style.opacity
-            ),
-            &brush
+        // Draw text with cached brush
+        Color effectiveTextColor(
+            style.textColor.r,
+            style.textColor.g,
+            style.textColor.b,
+            style.textColor.a * style.opacity
+        );
+
+        ID2D1SolidColorBrush* brush = GetOrCreateBrush(
+            rt,
+            effectiveTextColor,
+            cachedTextBrush,
+            cachedTextColor
         );
 
         if (brush) {
             D2D1_POINT_2F origin = D2D1::Point2F(bounds.x, bounds.y);
             rt->DrawTextLayout(origin, textLayout, brush);
-            brush->Release();
+            // Note: Don't release cached brush
         }
 
         // Draw children (only once)

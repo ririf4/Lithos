@@ -47,7 +47,7 @@ namespace Lithos {
     class LITHOS_API Node {
     public:
         Node();
-        virtual ~Node() = default;
+        virtual ~Node();
 
         Node(const Node&) = delete;              ///< Copy constructor deleted
         Node& operator=(const Node&) = delete;   ///< Copy assignment deleted
@@ -231,6 +231,12 @@ namespace Lithos {
         bool isLayouting;                            ///< Layout in progress guard
         TransitionManager transitionManager;         ///< Manages property transitions
 
+        // Performance optimization: cached brushes
+        mutable ID2D1SolidColorBrush* cachedBackgroundBrush;  ///< Cached background brush
+        mutable Color cachedBackgroundColor;                   ///< Cached background color
+        mutable ID2D1SolidColorBrush* cachedBorderBrush;      ///< Cached border brush
+        mutable Color cachedBorderColor;                       ///< Cached border color
+
         /**
          * @brief Marks this node and ancestors as needing redraw
          */
@@ -246,5 +252,32 @@ namespace Lithos {
 
         // Make TransitionManager a friend so it can access style directly
         friend class TransitionManager;
+        /**
+         * @brief Safely releases a COM interface pointer
+         * @tparam T Type of the interface
+         * @param ptr Reference to the pointer to release
+         */
+        template<typename T>
+        void SafeRelease(T*& ptr) const {
+            if (ptr) {
+                ptr->Release();
+                ptr = nullptr;
+            }
+        }
+
+        /**
+         * @brief Gets or creates a cached brush for the given color
+         * @param dc Direct2D device context
+         * @param color Desired color
+         * @param cachedBrush Reference to cached brush pointer
+         * @param cachedColor Reference to cached color
+         * @return Brush for the specified color (cached or newly created)
+         */
+        ID2D1SolidColorBrush* GetOrCreateBrush(
+            ID2D1DeviceContext* dc,
+            const Color& color,
+            ID2D1SolidColorBrush*& cachedBrush,
+            Color& cachedColor
+        ) const;
     };
 }
