@@ -29,17 +29,42 @@
 namespace Lithos {
     class TextNode;
 
+    /**
+     * @brief Button states for visual feedback
+     */
     enum class ButtonState {
-        Normal,
-        Hover,
-        Pressed,
-        Disabled
+        Normal,    ///< Default state
+        Hover,     ///< Mouse hovering over button
+        Pressed,   ///< Mouse button pressed down
+        Disabled   ///< Button is disabled (non-interactive)
     };
 
+    /**
+     * @brief Interactive button component with state management
+     *
+     * Button provides a complete interactive button implementation with:
+     * - Four visual states (Normal, Hover, Pressed, Disabled)
+     * - State-specific color customization
+     * - Click event handling with callbacks
+     * - Integrated text label (TextNode)
+     * - Custom cursor support
+     * - Automatic state transitions based on mouse events
+     *
+     * Button extends Container, so it can contain additional child elements
+     * and use flexbox layout for positioning the label.
+     *
+     * @note The button contains an internal TextNode for the label.
+     */
     class LITHOS_API Button : public Container {
         public:
             Button();
+
+            /**
+             * @brief Constructs a button with a text label
+             * @param label Initial button label text
+             */
             explicit Button(const std::string& label);
+
             ~Button() override = default;
 
             Button(const Button&) = delete;
@@ -47,36 +72,61 @@ namespace Lithos {
             Button(Button&&) = delete;
             Button& operator=(Button&&) = delete;
 
-            // Label
+            // ========== Label Configuration ==========
+
+            /** @brief Sets the button label text */
             Button& SetLabel(const std::string& label);
+            /** @brief Gets the current button label */
             const std::string& GetLabel() const { return label; }
 
-            // State styling
+            // ========== State-Specific Colors ==========
+
+            /** @brief Sets color for Normal state */
             Button& SetNormalColor(Color color);
+            /** @brief Sets color for Hover state */
             Button& SetHoverColor(Color color);
+            /** @brief Sets color for Pressed state */
             Button& SetPressedColor(Color color);
+            /** @brief Sets color for Disabled state */
             Button& SetDisabledColor(Color color);
 
+            /** @brief Sets text color for the label */
             Button& SetTextColor(Color color);
+            /** @brief Sets font size for the label */
             Button& SetFontSize(float size);
 
-            // State management
+            // ========== State Management ==========
+
+            /** @brief Enables or disables the button */
             Button& SetEnabled(bool enabled);
+            /** @brief Checks if the button is enabled */
             bool IsEnabled() const { return state != ButtonState::Disabled; }
+            /** @brief Gets the current button state */
             ButtonState GetState() const { return state; }
 
-            // Callback
+            // ========== Event Handling ==========
+
+            /** @brief Callback function type for click events */
             using ClickCallback = std::function<void(Button*)>;
+
+            /** @brief Sets the click event callback */
             Button& SetOnClick(const ClickCallback& callback);
 
-            // Cursor
+            // ========== Cursor Configuration ==========
+
+            /** @brief Sets cursor type when hovering (default: Hand) */
             Button& SetHoverCursor(CursorType cursor);
+            /** @brief Sets cursor type when disabled (default: No) */
             Button& SetDisabledCursor(CursorType cursor);
 
+            /** @brief Gets the hover cursor type */
             CursorType GetHoverCursor() const { return hoverCursor; }
+            /** @brief Gets the disabled cursor type */
             CursorType GetDisabledCursor() const { return disabledCursor; }
 
+            /** @brief Renders the button with current state color */
             void Draw(ID2D1DeviceContext* rt) override;
+            /** @brief Handles mouse events for state transitions and clicks */
             bool OnEvent(const Event& event) override;
 
         private:
