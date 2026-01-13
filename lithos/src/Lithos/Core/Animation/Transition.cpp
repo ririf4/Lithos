@@ -14,26 +14,20 @@
     limitations under the License.
 */
 
+#define NOMINMAX
+
 #include "Lithos/Core/Animation/Transition.hpp"
 #include "Lithos/Core/Node.hpp"
 #include <algorithm>
 
 namespace Lithos {
     void TransitionManager::AddTransition(const TransitionConfig& config) {
-        configs[config.property] = config;
+        configs.insert_or_assign(config.property, config);
     }
 
     void TransitionManager::RemoveTransition(AnimatableProperty property) {
         configs.erase(property);
-
-        // Remove any active transitions for this property
-        activeTransitions.erase(
-            std::remove_if(activeTransitions.begin(), activeTransitions.end(),
-                [property](const ActiveTransition& t) {
-                    return t.property == property;
-                }),
-            activeTransitions.end()
-        );
+        activeTransitions.erase(property);
     }
 
     void TransitionManager::ClearTransitions() {
@@ -41,9 +35,7 @@ namespace Lithos {
         activeTransitions.clear();
     }
 
-    void TransitionManager::OnPropertyChange(Node* node,
-                                            AnimatableProperty property,
-                                            const PropertyValue& newValue) {
+    void TransitionManager::OnPropertyChange(Node* node, AnimatableProperty property, const PropertyValue& newValue) {
         // Check if this property has a transition configured
         auto configIt = configs.find(property);
         if (configIt == configs.end()) {
@@ -52,132 +44,129 @@ namespace Lithos {
 
         const TransitionConfig& config = configIt->second;
 
-        // Get current value (either from running transition or from node)
+        // Get current value - either from running transition or from style
         PropertyValue currentValue = GetCurrentValue(node, property);
 
-        // Remove any existing transition for this property
-        activeTransitions.erase(
-            std::remove_if(activeTransitions.begin(), activeTransitions.end(),
-                [property](const ActiveTransition& t) {
-                    return t.property == property;
-                }),
-            activeTransitions.end()
-        );
+        // Create or update the active transition
+        auto now = std::chrono::steady_clock::now();
 
-        // Create new active transition
-        activeTransitions.emplace_back(
+        ActiveTransition transition(
             property,
             currentValue,
             newValue,
             config.duration,
             config.delay,
             config.easing,
-            std::chrono::steady_clock::now()
+            now
         );
+
+        // Insert or replace existing transition for this property
+        activeTransitions.insert_or_assign(property, transition);
     }
 
     bool TransitionManager::Update(Node* node, std::chrono::steady_clock::time_point currentTime) {
-        bool hasActive = false;
+        if (activeTransitions.empty()) {
+            return false;
+        }
 
-        auto it = activeTransitions.begin();
-        while (it != activeTransitions.end()) {
-            auto& transition = *it;
+        std::vector<AnimatableProperty> completedTransitions;
 
+        for (auto& [property, transition] : activeTransitions) {
             // Calculate elapsed time since transition started
-            auto elapsed = std::chrono::duration<float>(
+            float elapsed = std::chrono::duration<float>(
                 currentTime - transition.startTime
             ).count();
 
             // Handle delay
             if (!transition.delayComplete) {
                 if (elapsed < transition.delay) {
-                    hasActive = true;
-                    ++it;
+                    // Still in delay - apply start value
+                    ApplyValue(node, property, transition.startValue, true);
                     continue;
                 }
                 transition.delayComplete = true;
-                elapsed -= transition.delay;
-            } else {
-                elapsed -= transition.delay;
             }
 
+            // Subtract delay from elapsed time for progress calculation
+            float animElapsed = elapsed - transition.delay;
+
             // Check if transition is complete
-            if (elapsed >= transition.duration) {
-                // Apply final value and remove transition
-                ApplyValue(node, transition.property, transition.targetValue, true);
-                it = activeTransitions.erase(it);
+            if (animElapsed >= transition.duration) {
+                // Apply final value
+                ApplyValue(node, property, transition.targetValue, true);
+                completedTransitions.push_back(property);
             } else {
                 // Calculate progress (0.0 to 1.0)
-                float t = elapsed / transition.duration;
+                float t = animElapsed / transition.duration;
 
                 // Apply easing function
                 float easedT = transition.easing ? transition.easing(t) : t;
 
                 // Interpolate value
-                PropertyValue currentValue = LerpPropertyValue(
+                PropertyValue interpolatedValue = LerpPropertyValue(
                     transition.startValue,
                     transition.targetValue,
                     easedT
                 );
 
                 // Apply interpolated value
-                ApplyValue(node, transition.property, currentValue, true);
-
-                hasActive = true;
-                ++it;
+                ApplyValue(node, property, interpolatedValue, true);
             }
         }
 
-        return hasActive;
+        // Remove completed transitions
+        for (auto property : completedTransitions) {
+            activeTransitions.erase(property);
+        }
+
+        return !activeTransitions.empty();
     }
 
     bool TransitionManager::HasActiveTransition(AnimatableProperty property) const {
-        return std::any_of(activeTransitions.begin(), activeTransitions.end(),
-            [property](const ActiveTransition& t) {
-                return t.property == property;
-            });
+        return activeTransitions.find(property) != activeTransitions.end();
     }
 
     PropertyValue TransitionManager::GetCurrentValue(Node* node, AnimatableProperty property) {
         // Check if there's an active transition for this property
-        for (const auto& transition : activeTransitions) {
-            if (transition.property == property) {
-                // Return the current interpolated value
-                auto elapsed = std::chrono::duration<float>(
-                    std::chrono::steady_clock::now() - transition.startTime
-                ).count();
+        auto it = activeTransitions.find(property);
+        if (it != activeTransitions.end()) {
+            const auto& transition = it->second;
 
-                if (!transition.delayComplete || elapsed < transition.delay) {
-                    return transition.startValue;
-                }
+            // Return the current interpolated value
+            float elapsed = std::chrono::duration<float>(
+                std::chrono::steady_clock::now() - transition.startTime
+            ).count();
 
-                elapsed -= transition.delay;
-                float t = std::min(elapsed / transition.duration, 1.0f);
-                float easedT = transition.easing ? transition.easing(t) : t;
-
-                return LerpPropertyValue(
-                    transition.startValue,
-                    transition.targetValue,
-                    easedT
-                );
+            if (!transition.delayComplete && elapsed < transition.delay) {
+                return transition.startValue;
             }
+
+            float animElapsed = elapsed - transition.delay;
+            float t = std::min(std::max(animElapsed / transition.duration, 0.0f), 1.0f);
+            float easedT = transition.easing ? transition.easing(t) : t;
+
+            return LerpPropertyValue(
+                transition.startValue,
+                transition.targetValue,
+                easedT
+            );
         }
 
-        // No active transition - get value from node
+        // No active transition - get value from node style
         switch (property) {
             case AnimatableProperty::Left:
-                return node->GetX();
+                return node->style.left;
             case AnimatableProperty::Top:
-                return node->GetY();
+                return node->style.top;
             case AnimatableProperty::Position:
-                return std::make_pair(node->GetX(), node->GetY());
+                return std::make_pair(node->style.left, node->style.top);
 
             case AnimatableProperty::Width:
-                return node->GetWidth();
+                return node->style.width;
             case AnimatableProperty::Height:
-                return node->GetHeight();
+                return node->style.height;
             case AnimatableProperty::Size:
-                return std::make_pair(node->GetWidth(), node->GetHeight());
+                return std::make_pair(node->style.width, node->style.height);
 
             case AnimatableProperty::Opacity:
                 return node->style.opacity;
@@ -229,10 +218,7 @@ namespace Lithos {
         }
     }
 
-    void TransitionManager::ApplyValue(Node* node,
-                                       AnimatableProperty property,
-                                       const PropertyValue& value,
-                                       bool skipTransition) {
+    void TransitionManager::ApplyValue(Node* node, AnimatableProperty property, const PropertyValue& value, bool skipTransition) {
         // Determine if this property affects layout
         bool needsLayout = false;
 

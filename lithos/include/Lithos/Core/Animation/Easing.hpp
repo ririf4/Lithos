@@ -79,9 +79,12 @@ namespace Lithos {
          * @return Eased value
          */
         inline float EaseInOut(float t) {
-            return t < 0.5f
-                ? 4.0f * t * t * t
-                : 1.0f + (--t) * (2.0f * (--t)) * (2.0f * t);
+            if (t < 0.5f) {
+                return 4.0f * t * t * t;
+            } else {
+                float f = 2.0f * t - 2.0f;
+                return 0.5f * f * f * f + 1.0f;
+            }
         }
 
         /**

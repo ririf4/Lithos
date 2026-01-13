@@ -42,14 +42,15 @@ namespace Lithos {
     }
 
     Node& Node::SetPosition(const float x, const float y) {
-        // Check for Position transition
+        // Try Position transition first (combined property)
         transitionManager.OnPropertyChange(this, AnimatableProperty::Position, std::make_pair(x, y));
 
         if (!transitionManager.HasActiveTransition(AnimatableProperty::Position)) {
-            // Also check individual Left/Top transitions
+            // No combined Position transition, try individual Left/Top transitions
             transitionManager.OnPropertyChange(this, AnimatableProperty::Left, x);
             transitionManager.OnPropertyChange(this, AnimatableProperty::Top, y);
 
+            // Apply values only if no transitions were started
             if (!transitionManager.HasActiveTransition(AnimatableProperty::Left)) {
                 style.left = x;
             }
@@ -57,24 +58,27 @@ namespace Lithos {
                 style.top = y;
             }
 
+            // Only request layout if no transitions are active
             if (!transitionManager.HasActiveTransition(AnimatableProperty::Left) &&
                 !transitionManager.HasActiveTransition(AnimatableProperty::Top)) {
                 RequestLayout();
             }
         }
+        // If Position transition is active, Update() will handle everything
 
         return *this;
     }
 
     Node& Node::SetSize(const float width, const float height) {
-        // Check for Size transition
+        // Try Size transition first (combined property)
         transitionManager.OnPropertyChange(this, AnimatableProperty::Size, std::make_pair(width, height));
 
         if (!transitionManager.HasActiveTransition(AnimatableProperty::Size)) {
-            // Also check individual Width/Height transitions
+            // No combined Size transition, try individual Width/Height transitions
             transitionManager.OnPropertyChange(this, AnimatableProperty::Width, width);
             transitionManager.OnPropertyChange(this, AnimatableProperty::Height, height);
 
+            // Apply values only if no transitions were started
             if (!transitionManager.HasActiveTransition(AnimatableProperty::Width)) {
                 style.width = width;
             }
@@ -82,11 +86,13 @@ namespace Lithos {
                 style.height = height;
             }
 
+            // Only request layout if no transitions are active
             if (!transitionManager.HasActiveTransition(AnimatableProperty::Width) &&
                 !transitionManager.HasActiveTransition(AnimatableProperty::Height)) {
                 RequestLayout();
             }
         }
+        // If Size transition is active, Update() will handle everything
 
         return *this;
     }
@@ -124,14 +130,16 @@ namespace Lithos {
     }
 
     Node& Node::SetBackgroundColor(const Color color) {
-        // Check if transition is configured for this property
+        // Try to start a transition
         transitionManager.OnPropertyChange(this, AnimatableProperty::BackgroundColor, color);
 
-        // If no active transition, apply immediately
+        // Only apply immediately if no transition was started
+        // The transition system will handle applying the value during animation
         if (!transitionManager.HasActiveTransition(AnimatableProperty::BackgroundColor)) {
             style.backgroundColor = color;
             MarkDirty();
         }
+        // If transition is active, Update() will apply interpolated values and mark dirty
 
         return *this;
     }
@@ -178,14 +186,16 @@ namespace Lithos {
     Node& Node::SetOpacity(const float opacity) {
         float clampedOpacity = std::clamp(opacity, 0.0f, 1.0f);
 
-        // Check if transition is configured for this property
+        // Try to start a transition
         transitionManager.OnPropertyChange(this, AnimatableProperty::Opacity, clampedOpacity);
 
-        // If no active transition, apply immediately
+        // Only apply immediately if no transition was started
+        // The transition system will handle applying the value during animation
         if (!transitionManager.HasActiveTransition(AnimatableProperty::Opacity)) {
             style.opacity = clampedOpacity;
             MarkDirty();
         }
+        // If transition is active, Update() will apply interpolated values and mark dirty
 
         return *this;
     }
@@ -466,6 +476,8 @@ namespace Lithos {
     Node& Node::RemoveTransition(AnimatableProperty property) {
         transitionManager.RemoveTransition(property);
         return *this;
+    }
+
     ID2D1SolidColorBrush* Node::GetOrCreateBrush(
         ID2D1DeviceContext* dc,
         const Color& color,

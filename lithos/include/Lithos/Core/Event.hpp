@@ -33,6 +33,7 @@ namespace Lithos {
         MouseUp,        ///< Mouse button released
         MouseMove,      ///< Mouse cursor moved
         MouseWheel,     ///< Mouse wheel scrolled
+        Char,           ///< Character input
 
         KeyDown,        ///< Keyboard key pressed
         KeyUp,          ///< Keyboard key released
@@ -103,5 +104,6 @@ namespace Lithos {
 
         // Keyboard event data
         int key = 0;             ///< Virtual key code (for KeyDown/KeyUp events)
+        wchar_t character = 0;
     };
 }

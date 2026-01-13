@@ -14,12 +14,13 @@
     limitations under the License.
  */
 
+#define NOMINMAX
+
 #include "Lithos/Components/TextInput.hpp"
 #include "Lithos/PCH.hpp"
 #include "Lithos/Core/Window.hpp"
 #include <dwrite.h>
 #include <iostream>
-#include <algorithm>
 
 namespace Lithos {
     namespace {

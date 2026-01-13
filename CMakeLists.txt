@@ -77,7 +77,7 @@ add_executable(ToggleTest
         example/toggle_test.cpp
 )
 
-add_executable(TransitionDemo
+add_executable(TransitionDemo WIN32
         example/transition_demo.cpp
 )
 

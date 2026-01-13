@@ -148,7 +148,8 @@ namespace Lithos {
          * @brief Called when a property value changes
          *
          * If a transition is configured for the property, starts a new transition.
-         * If a transition is already active, it will be replaced.
+         * If a transition is already active, it will be replaced starting from the
+         * current interpolated value to ensure smooth transitions.
          *
          * @param node Node whose property is changing
          * @param property Property that changed
@@ -161,7 +162,8 @@ namespace Lithos {
         /**
          * @brief Updates all active transitions
          *
-         * Called each frame to interpolate property values.
+         * Called each frame to interpolate property values and apply them to the node.
+         * This ensures the style always reflects the current animation state.
          *
          * @param node Node to update
          * @param currentTime Current time point
@@ -184,10 +186,14 @@ namespace Lithos {
 
     private:
         std::unordered_map<AnimatableProperty, TransitionConfig> configs;
-        std::vector<ActiveTransition> activeTransitions;
+        std::unordered_map<AnimatableProperty, ActiveTransition> activeTransitions;
 
         /**
-         * @brief Gets the current value of a property from a node
+         * @brief Gets the current value of a property
+         *
+         * If a transition is active, returns the current interpolated value.
+         * Otherwise, returns the value from the node's style.
+         *
          * @param node Node to get value from
          * @param property Property to get
          * @return Current property value

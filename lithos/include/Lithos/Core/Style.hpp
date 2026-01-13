@@ -74,6 +74,7 @@ namespace Lithos {
         Light = DWRITE_FONT_WEIGHT_LIGHT,      ///< Light (300)
         Normal = DWRITE_FONT_WEIGHT_NORMAL,    ///< Normal (400)
         Medium = DWRITE_FONT_WEIGHT_MEDIUM,    ///< Medium (500)
+        SemiBold = DWRITE_FONT_WEIGHT_SEMI_BOLD,
         Bold = DWRITE_FONT_WEIGHT_BOLD,        ///< Bold (700)
         ExtraBold = DWRITE_FONT_WEIGHT_EXTRA_BOLD,  ///< Extra Bold (800)
         Black = DWRITE_FONT_WEIGHT_BLACK       ///< Black (900)

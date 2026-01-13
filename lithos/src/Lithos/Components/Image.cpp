@@ -14,11 +14,13 @@
     limitations under the License.
  */
 
+#define NOMINMAX
+
 #include "Lithos/Components/Image.hpp"
-#include "Lithos/PCH.hpp"
-#include <wincodec.h>
-#include <iostream>
 #include <algorithm>
+#include <iostream>
+#include <wincodec.h>
+#include "Lithos/PCH.hpp"
 
 namespace Lithos {
     // Static WIC factory (singleton pattern like DirectWrite)

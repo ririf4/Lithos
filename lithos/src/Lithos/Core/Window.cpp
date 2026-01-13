@@ -331,6 +331,7 @@ namespace Lithos {
             // Trigger redraw if animations are active
             if (needsAnimation) {
                 InvalidateRect(hwnd, nullptr, FALSE);
+                UpdateWindow(hwnd);  // Force immediate redraw
             }
 
             lastFrameTime = currentTime;
