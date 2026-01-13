@@ -17,6 +17,7 @@
 #include "Lithos/Core/Node.hpp"
 #include <algorithm>
 #include "Lithos/PCH.hpp"
+#include "Lithos/Core/Window.hpp"
 
 namespace Lithos {
     Node::Node()
@@ -27,7 +28,8 @@ namespace Lithos {
           cachedBackgroundBrush(nullptr),
           cachedBackgroundColor(Transparent),
           cachedBorderBrush(nullptr),
-          cachedBorderColor(Transparent) {}
+          cachedBorderColor(Transparent),
+          windowPtr(nullptr) {}
 
     Node::~Node() {
         // Release cached brushes
@@ -37,6 +39,8 @@ namespace Lithos {
 
     void Node::AddChild(std::unique_ptr<Node> child) {
         child->parent = this;
+        // Propagate window pointer to child
+        child->SetWindow(windowPtr);
         children.push_back(std::move(child));
         RequestLayout();
     }
@@ -503,5 +507,25 @@ namespace Lithos {
 
         cachedColor = color;
         return cachedBrush;
+    }
+
+    void Node::SetWindow(void* window) {
+        windowPtr = window;
+        // Recursively set window for all children
+        for (auto& child : children) {
+            child->SetWindow(window);
+        }
+    }
+
+    void Node::RequestFocus() {
+        if (windowPtr) {
+            auto* window = static_cast<Window*>(windowPtr);
+            window->SetFocusedNode(this);
+        }
+    }
+
+    void Node::OnLostFocus() {
+        // Default implementation does nothing
+        // Override in derived classes to handle focus loss
     }
 }

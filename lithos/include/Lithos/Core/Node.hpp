@@ -231,6 +231,8 @@ namespace Lithos {
         bool isLayouting;                            ///< Layout in progress guard
         TransitionManager transitionManager;         ///< Manages property transitions
 
+        void* windowPtr;                             ///< Pointer to owning Window (void* to avoid circular dependency)
+
         // Performance optimization: cached brushes
         mutable ID2D1SolidColorBrush* cachedBackgroundBrush;  ///< Cached background brush
         mutable Color cachedBackgroundColor;                   ///< Cached background color
@@ -250,7 +252,36 @@ namespace Lithos {
          */
         void RequestLayout();
 
-        // Make TransitionManager a friend so it can access style directly
+        /**
+         * @brief Requests keyboard focus for this node
+         *
+         * Notifies the window to set this node as the focused node.
+         * Only works if the node belongs to a window.
+         */
+        void RequestFocus();
+
+        /**
+         * @brief Called when this node loses focus
+         *
+         * Override this method in derived classes to handle focus loss.
+         * Default implementation does nothing.
+         */
+        virtual void OnLostFocus();
+
+        /**
+         * @brief Gets the window pointer
+         * @return Pointer to Window (may be nullptr if not attached to window)
+         */
+        void* GetWindow() const { return windowPtr; }
+
+        /**
+         * @brief Sets the window pointer (called internally by Window)
+         * @param window Pointer to the owning Window
+         */
+        void SetWindow(void* window);
+
+        // Make Window and TransitionManager friends so they can access internals
+        friend class Window;
         friend class TransitionManager;
         /**
          * @brief Safely releases a COM interface pointer

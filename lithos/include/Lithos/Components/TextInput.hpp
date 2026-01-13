@@ -99,6 +99,9 @@ namespace Lithos {
             void Draw(ID2D1DeviceContext* rt) override;
             bool OnEvent(const Event& event) override;
 
+        protected:
+            void OnLostFocus() override;
+
         private:
             // Text data
             std::string text;
@@ -117,6 +120,10 @@ namespace Lithos {
             size_t selectionStart;
             size_t selectionEnd;
             bool hasSelection;
+            bool isDraggingSelection;  // True when user is dragging to select text
+
+            // Scroll offset for horizontal scrolling
+            float scrollOffsetX;
 
             // Cursor blinking
             std::chrono::steady_clock::time_point lastBlinkTime;
@@ -174,6 +181,9 @@ namespace Lithos {
             void DrawSelection(ID2D1DeviceContext* rt);
             void DrawCursor(ID2D1DeviceContext* rt);
             void DrawText(ID2D1DeviceContext* rt);
+
+            // Scrolling
+            void EnsureCursorVisible();
 
             // Hit testing for cursor positioning
             size_t GetCharacterIndexFromPoint(float x, float y);

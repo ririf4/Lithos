@@ -296,7 +296,16 @@ namespace Lithos {
                     return;
             }
 
-            rootNode->OnEvent(evt);
+            bool handled = rootNode->OnEvent(evt);
+
+            // If mouse down wasn't handled by any node, clear focus
+            if (!handled && evt.type == EventType::MouseDown) {
+                if (focusedNode) {
+                    focusedNode->OnLostFocus();
+                    focusedNode = nullptr;
+                }
+            }
+
             InvalidateRect(hwnd, nullptr, FALSE);
         }
 
@@ -461,6 +470,9 @@ namespace Lithos {
 
         pimpl->CreateDeviceResources();
 
+        // Set window pointer in root node
+        pimpl->rootNode->SetWindow(this);
+
         pimpl->rootNode->SetSize(static_cast<float>(width), static_cast<float>(height));
         pimpl->rootNode->SetPosition(0, 0);
         pimpl->rootNode->Layout();
@@ -519,6 +531,10 @@ namespace Lithos {
     }
 
     void Window::SetFocusedNode(Node* node) {
+        // Call OnLostFocus on the previous focused node
+        if (pimpl->focusedNode && pimpl->focusedNode != node) {
+            pimpl->focusedNode->OnLostFocus();
+        }
         pimpl->focusedNode = node;
     }
 

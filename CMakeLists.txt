@@ -81,6 +81,11 @@ add_executable(TransitionDemo WIN32
         example/transition_demo.cpp
 )
 
+add_executable(TextInputTest
+        example/textinput_test.cpp
+)
+
 target_link_libraries(LithosTestAndExample PRIVATE Lithos)
 target_link_libraries(ToggleTest PRIVATE Lithos)
 target_link_libraries(TransitionDemo PRIVATE Lithos)
+target_link_libraries(TextInputTest PRIVATE Lithos)

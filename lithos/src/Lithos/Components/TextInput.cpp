@@ -49,6 +49,8 @@ namespace Lithos {
           selectionStart(0),
           selectionEnd(0),
           hasSelection(false),
+          isDraggingSelection(false),
+          scrollOffsetX(0.0f),
           cursorVisible(true),
           textColor(Color(0.0f, 0.0f, 0.0f)),
           placeholderColor(Color(0.6f, 0.6f, 0.6f)),
@@ -248,8 +250,12 @@ namespace Lithos {
 
         std::wstring wText = Utf8ToWString(GetDisplayText());
 
-        float maxWidth = std::max(0.0f, bounds.width - style.padding * 2);
-        float maxHeight = std::max(0.0f, bounds.height - style.padding * 2);
+        // For multiline, use fixed width for word wrapping
+        // For single line, use very large width to prevent wrapping
+        float maxWidth = isMultiLine
+            ? std::max(1.0f, bounds.width - style.padding * 2)
+            : 100000.0f;
+        float maxHeight = std::max(1.0f, bounds.height - style.padding * 2);
 
         HRESULT hr = factory->CreateTextLayout(
             wText.c_str(),
@@ -259,6 +265,11 @@ namespace Lithos {
             maxHeight,
             &textLayout
         );
+
+        if (SUCCEEDED(hr) && textLayout) {
+            // Ensure word wrapping is set correctly
+            textLayout->SetWordWrapping(isMultiLine ? DWRITE_WORD_WRAPPING_WRAP : DWRITE_WORD_WRAPPING_NO_WRAP);
+        }
     }
 
     void TextInput::UpdateTextLayout() {
@@ -299,8 +310,23 @@ namespace Lithos {
         MarkDirty();
     }
 
+    void TextInput::OnLostFocus() {
+        // Reset to normal state when losing focus
+        state = TextInputState::Normal;
+        hasSelection = false;
+        isDraggingSelection = false;
+        UpdateAppearance();
+    }
+
     void TextInput::UpdateCursorBlink() {
-        if (state != TextInputState::Focused) return;
+        if (state != TextInputState::Focused) {
+            // Hide cursor when not focused
+            if (cursorVisible) {
+                cursorVisible = false;
+                MarkDirty();
+            }
+            return;
+        }
 
         auto now = std::chrono::steady_clock::now();
         auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -339,6 +365,7 @@ namespace Lithos {
         cursorPosition++;
         ResetCursorBlink();
         UpdateTextLayout();
+        EnsureCursorVisible();
         MarkDirty();
 
         if (onChangeCallback) {
@@ -426,6 +453,7 @@ namespace Lithos {
 
         cursorPosition = newPosition;
         ResetCursorBlink();
+        EnsureCursorVisible();
         MarkDirty();
     }
 
@@ -529,6 +557,40 @@ namespace Lithos {
         DeleteSelection();
     }
 
+    // ========== Scrolling ==========
+
+    void TextInput::EnsureCursorVisible() {
+        if (!textLayout) return;
+
+        // MultiLine inputs use word wrapping, no horizontal scrolling needed
+        if (isMultiLine) {
+            scrollOffsetX = 0;
+            return;
+        }
+
+        float cursorX = GetCursorXPosition();
+        float viewportWidth = bounds.width - style.padding * 2;
+
+        // Get cursor position relative to scroll offset
+        float relativeCursorX = cursorX - bounds.x - style.padding;
+
+        // If cursor is to the right of viewport, scroll right
+        if (relativeCursorX > viewportWidth) {
+            scrollOffsetX += (relativeCursorX - viewportWidth);
+        }
+        // If cursor is to the left of viewport, scroll left
+        else if (relativeCursorX < 0) {
+            scrollOffsetX += relativeCursorX;  // relativeCursorX is negative
+        }
+
+        // Don't scroll past the beginning
+        if (scrollOffsetX < 0) {
+            scrollOffsetX = 0;
+        }
+
+        MarkDirty();
+    }
+
     // ========== Rendering ==========
 
     std::string TextInput::GetDisplayText() const {
@@ -553,7 +615,7 @@ namespace Lithos {
     }
 
     float TextInput::GetCursorXPosition() const {
-        if (!textLayout) return bounds.x + style.padding;
+        if (!textLayout) return bounds.x + style.padding - scrollOffsetX;
 
         DWRITE_HIT_TEST_METRICS metrics;
         float x, y;
@@ -566,7 +628,7 @@ namespace Lithos {
             &metrics
         );
 
-        return bounds.x + style.padding + x;
+        return bounds.x + style.padding + x - scrollOffsetX;
     }
 
     void TextInput::DrawSelection(ID2D1DeviceContext* rt) {
@@ -581,7 +643,7 @@ namespace Lithos {
         textLayout->HitTestTextRange(
             static_cast<UINT32>(start),
             static_cast<UINT32>(end - start),
-            bounds.x + style.padding,
+            bounds.x + style.padding - scrollOffsetX,
             bounds.y + style.padding,
             nullptr,
             0,
@@ -594,7 +656,7 @@ namespace Lithos {
         textLayout->HitTestTextRange(
             static_cast<UINT32>(start),
             static_cast<UINT32>(end - start),
-            bounds.x + style.padding,
+            bounds.x + style.padding - scrollOffsetX,
             bounds.y + style.padding,
             hitTestMetrics.data(),
             actualHitTestCount,
@@ -624,11 +686,23 @@ namespace Lithos {
     void TextInput::DrawCursor(ID2D1DeviceContext* rt) {
         if (state != TextInputState::Focused || !cursorVisible || !textLayout) return;
 
-        float cursorX = GetCursorXPosition();
+        // Get cursor position and line height at cursor position
+        DWRITE_HIT_TEST_METRICS hitMetrics;
+        float x, y;
+        textLayout->HitTestTextPosition(
+            static_cast<UINT32>(cursorPosition),
+            false,
+            &x,
+            &y,
+            &hitMetrics
+        );
 
-        DWRITE_TEXT_METRICS metrics;
-        textLayout->GetMetrics(&metrics);
-        float lineHeight = metrics.height;
+        // Calculate cursor X position with scroll offset
+        float cursorX = bounds.x + style.padding + x - scrollOffsetX;
+
+        // Calculate cursor Y position and height (use the line's height, not total text height)
+        float cursorY = bounds.y + style.padding + y;
+        float lineHeight = hitMetrics.height;
 
         ID2D1SolidColorBrush* cursorBrush = nullptr;
         rt->CreateSolidColorBrush(
@@ -638,8 +712,8 @@ namespace Lithos {
 
         if (cursorBrush) {
             rt->DrawLine(
-                D2D1::Point2F(cursorX, bounds.y + style.padding),
-                D2D1::Point2F(cursorX, bounds.y + style.padding + lineHeight),
+                D2D1::Point2F(cursorX, cursorY),
+                D2D1::Point2F(cursorX, cursorY + lineHeight),
                 cursorBrush,
                 1.5f
             );
@@ -677,7 +751,7 @@ namespace Lithos {
                 brush->Release();
             }
         } else {
-            // Draw actual text
+            // Draw actual text with scroll offset
             rt->CreateSolidColorBrush(
                 D2D1::ColorF(textColor.r, textColor.g, textColor.b, textColor.a),
                 &brush
@@ -685,7 +759,7 @@ namespace Lithos {
 
             if (brush) {
                 rt->DrawTextLayout(
-                    D2D1::Point2F(bounds.x + style.padding, bounds.y + style.padding),
+                    D2D1::Point2F(bounds.x + style.padding - scrollOffsetX, bounds.y + style.padding),
                     textLayout,
                     brush
                 );
@@ -704,7 +778,7 @@ namespace Lithos {
         DWRITE_HIT_TEST_METRICS metrics;
 
         textLayout->HitTestPoint(
-            x - bounds.x - style.padding,
+            x - bounds.x - style.padding + scrollOffsetX,
             y - bounds.y - style.padding,
             &isTrailingHit,
             &isInside,
@@ -735,10 +809,24 @@ namespace Lithos {
         // Draw background, border, shadow
         Node::Draw(rt);
 
+        // Push clip for text area to prevent overflow
+        rt->PushAxisAlignedClip(
+            D2D1::RectF(
+                bounds.x + style.padding,
+                bounds.y + style.padding,
+                bounds.x + bounds.width - style.padding,
+                bounds.y + bounds.height - style.padding
+            ),
+            D2D1_ANTIALIAS_MODE_PER_PRIMITIVE
+        );
+
         // Draw selection, text, and cursor
         DrawSelection(rt);
         DrawText(rt);
         DrawCursor(rt);
+
+        // Pop clip
+        rt->PopAxisAlignedClip();
     }
 
     // ========== Event Handling ==========
@@ -748,6 +836,24 @@ namespace Lithos {
 
         // Mouse move - update hover state and cursor
         if (event.type == EventType::MouseMove) {
+            // Handle text selection dragging
+            if (isDraggingSelection && state == TextInputState::Focused) {
+                size_t newPosition = GetCharacterIndexFromPoint(
+                    static_cast<float>(event.mouseX),
+                    static_cast<float>(event.mouseY)
+                );
+
+                if (newPosition != cursorPosition) {
+                    cursorPosition = newPosition;
+                    selectionEnd = newPosition;
+                    hasSelection = (selectionStart != selectionEnd);
+                    ResetCursorBlink();
+                    EnsureCursorVisible();
+                    MarkDirty();
+                }
+                return true;
+            }
+
             if (isInside) {
                 if (state == TextInputState::Disabled) {
                     HCURSOR cursor = LoadCursor(nullptr, IDC_NO);
@@ -779,19 +885,33 @@ namespace Lithos {
                     static_cast<float>(event.mouseX),
                     static_cast<float>(event.mouseY)
                 );
-                hasSelection = false;
 
-                // Note: Need to get Window instance to call SetFocusedNode
-                // This requires passing Window* or using a global/static reference
-                // For now, leave focus management to be handled externally
+                // Start selection drag
+                selectionStart = cursorPosition;
+                selectionEnd = cursorPosition;
+                hasSelection = false;
+                isDraggingSelection = true;
+
+                // Request keyboard focus from the window
+                RequestFocus();
 
                 return true;
-            } else if (state == TextInputState::Focused) {
-                // Clicked outside - lose focus
+            } else if (!isInside && state == TextInputState::Focused) {
+                // Clicked outside while focused - lose focus
                 state = TextInputState::Normal;
                 UpdateAppearance();
                 hasSelection = false;
-                return false;
+                isDraggingSelection = false;
+                // Don't handle the event - let it propagate
+                // This allows Window to clear focusedNode
+            }
+        }
+
+        // Mouse up - end selection drag
+        if (event.type == EventType::MouseUp && event.button == MouseButton::Left) {
+            if (isDraggingSelection) {
+                isDraggingSelection = false;
+                return true;
             }
         }
 
@@ -803,8 +923,8 @@ namespace Lithos {
         if (event.type == EventType::Char) {
             wchar_t ch = event.character;
 
-            // Filter control characters (except newline in multiline mode)
-            if (ch < 32 && !(isMultiLine && ch == L'\n')) {
+            // Filter control characters (we handle Enter separately in KeyDown)
+            if (ch < 32) {
                 return true;
             }
 
@@ -817,6 +937,14 @@ namespace Lithos {
             bool shiftPressed = (GetKeyState(VK_SHIFT) & 0x8000) != 0;
 
             switch (event.key) {
+                case VK_RETURN:  // Enter key
+                    if (isMultiLine && shiftPressed) {
+                        // Shift+Enter inserts a newline in multiline mode
+                        InsertCharacter(L'\n');
+                        return true;
+                    }
+                    // Otherwise, do nothing (could be used for form submission in the future)
+                    return true;
                 case VK_LEFT:
                     MoveCursor(-1, shiftPressed);
                     return true;
