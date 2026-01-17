@@ -81,5 +81,36 @@ namespace Lithos {
             return px >= x && px < x + width &&
                    py >= y && py < y + height;
         }
+
+        /**
+         * @brief Tests if this rectangle intersects with another rectangle
+         * @param other The rectangle to test intersection with
+         * @return true if the rectangles overlap or touch
+         */
+        bool Intersects(const Rect& other) const {
+            return !(Right() < other.Left() || other.Right() < Left() ||
+                     Bottom() < other.Top() || other.Bottom() < Top());
+        }
+
+        /**
+         * @brief Computes the bounding box that contains both rectangles
+         * @param other The other rectangle to include
+         * @return A new Rect that contains both this and the other rectangle
+         */
+        Rect BoundingBox(const Rect& other) const {
+            const float left = (std::min)(x, other.x);
+            const float top = (std::min)(y, other.y);
+            const float right = (std::max)(Right(), other.Right());
+            const float bottom = (std::max)(Bottom(), other.Bottom());
+            return Rect(left, top, right - left, bottom - top);
+        }
+
+        /**
+         * @brief Computes the area of this rectangle
+         * @return Area in square pixels
+         */
+        float Area() const {
+            return width * height;
+        }
     };
 }

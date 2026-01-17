@@ -25,10 +25,10 @@ namespace Lithos {
           state(ToggleState::Normal),
           checkedColor(Color(0.2f, 0.4f, 0.8f)),      // Blue
           uncheckedColor(Color(0.9f, 0.9f, 0.9f)),    // Light Gray
-          checkmarkColor(White),
+          checkmarkColor(Colors::White),
           switchOnColor(Color(0.2f, 0.8f, 0.4f)),     // Green
           switchOffColor(Color(0.7f, 0.7f, 0.7f)),    // Gray
-          thumbColor(White),
+          thumbColor(Colors::White),
           hoverCursor(CursorType::Hand),
           disabledCursor(CursorType::No),
           onChangeCallback(nullptr) {

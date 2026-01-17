@@ -20,16 +20,58 @@
 #include "Lithos/Core/Window.hpp"
 
 namespace Lithos {
+    // RAII helper for COM resource management
+    template<typename T>
+    class ComPtr {
+    public:
+        ComPtr() : ptr(nullptr) {}
+        explicit ComPtr(T* p) : ptr(p) {}
+
+        ~ComPtr() {
+            if (ptr) {
+                ptr->Release();
+                ptr = nullptr;
+            }
+        }
+
+        // Disable copy
+        ComPtr(const ComPtr&) = delete;
+        ComPtr& operator=(const ComPtr&) = delete;
+
+        // Enable move
+        ComPtr(ComPtr&& other) noexcept : ptr(other.ptr) {
+            other.ptr = nullptr;
+        }
+
+        ComPtr& operator=(ComPtr&& other) noexcept {
+            if (this != &other) {
+                if (ptr) ptr->Release();
+                ptr = other.ptr;
+                other.ptr = nullptr;
+            }
+            return *this;
+        }
+
+        T** GetAddressOf() { return &ptr; }
+        T* Get() const { return ptr; }
+        T* operator->() const { return ptr; }
+        explicit operator bool() const { return ptr != nullptr; }
+
+    private:
+        T* ptr;
+    };
+
     Node::Node()
         : parent(nullptr),
           visible(true),
           isDirty(true),
           isLayouting(false),
+          renderPriority(0),
+          windowPtr(nullptr),
           cachedBackgroundBrush(nullptr),
-          cachedBackgroundColor(Transparent),
+          cachedBackgroundColor(Colors::Transparent),
           cachedBorderBrush(nullptr),
-          cachedBorderColor(Transparent),
-          windowPtr(nullptr) {}
+          cachedBorderColor(Colors::Transparent) {}
 
     Node::~Node() {
         // Release cached brushes
@@ -45,7 +87,9 @@ namespace Lithos {
         RequestLayout();
     }
 
-    Node& Node::SetPosition(const float x, const float y) {
+    // ========== Internal Implementation Methods ==========
+
+    Node& Node::SetPositionInternal(const float x, const float y) {
         // Try Position transition first (combined property)
         transitionManager.OnPropertyChange(this, AnimatableProperty::Position, std::make_pair(x, y));
 
@@ -73,7 +117,11 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetSize(const float width, const float height) {
+    Node& Node::SetPosition(const float x, const float y) {
+        return SetPositionInternal(x, y);
+    }
+
+    Node& Node::SetSizeInternal(const float width, const float height) {
         // Try Size transition first (combined property)
         transitionManager.OnPropertyChange(this, AnimatableProperty::Size, std::make_pair(width, height));
 
@@ -101,16 +149,58 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetWidth(const float width) {
+    Node& Node::SetSize(const float width, const float height) {
+        return SetSizeInternal(width, height);
+    }
+
+    Node& Node::SetWidthInternal(const float width) {
         style.width = width;
         RequestLayout();
         return *this;
     }
 
-    Node& Node::SetHeight(const float height) {
+    Node& Node::SetWidth(const float width) {
+        return SetWidthInternal(width);
+    }
+
+    Node& Node::SetHeightInternal(const float height) {
         style.height = height;
         RequestLayout();
         return *this;
+    }
+
+    Node& Node::SetHeight(const float height) {
+        return SetHeightInternal(height);
+    }
+
+    Node& Node::SetRightInternal(const float right) {
+        transitionManager.OnPropertyChange(this, AnimatableProperty::Right, right);
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::Right)) {
+            style.right = right;
+            RequestLayout();
+        }
+
+        return *this;
+    }
+
+    Node& Node::SetRight(const float right) {
+        return SetRightInternal(right);
+    }
+
+    Node& Node::SetBottomInternal(const float bottom) {
+        transitionManager.OnPropertyChange(this, AnimatableProperty::Bottom, bottom);
+
+        if (!transitionManager.HasActiveTransition(AnimatableProperty::Bottom)) {
+            style.bottom = bottom;
+            RequestLayout();
+        }
+
+        return *this;
+    }
+
+    Node& Node::SetBottom(const float bottom) {
+        return SetBottomInternal(bottom);
     }
 
     Node& Node::SetPadding(const float padding) {
@@ -133,7 +223,7 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetBackgroundColor(const Color color) {
+    Node& Node::SetBackgroundColorInternal(const Color color) {
         // Try to start a transition
         transitionManager.OnPropertyChange(this, AnimatableProperty::BackgroundColor, color);
 
@@ -148,7 +238,11 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetBorderColor(const Color color) {
+    Node& Node::SetBackgroundColor(const Color color) {
+        return SetBackgroundColorInternal(color);
+    }
+
+    Node& Node::SetBorderColorInternal(const Color color) {
         transitionManager.OnPropertyChange(this, AnimatableProperty::BorderColor, color);
 
         if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderColor)) {
@@ -159,7 +253,11 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetBorderWidth(const float width) {
+    Node& Node::SetBorderColor(const Color color) {
+        return SetBorderColorInternal(color);
+    }
+
+    Node& Node::SetBorderWidthInternal(const float width) {
         transitionManager.OnPropertyChange(this, AnimatableProperty::BorderWidth, width);
 
         if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderWidth)) {
@@ -170,7 +268,11 @@ namespace Lithos {
         return *this;
     }
 
-    Node& Node::SetBorderRadius(const float radius) {
+    Node& Node::SetBorderWidth(const float width) {
+        return SetBorderWidthInternal(width);
+    }
+
+    Node& Node::SetBorderRadiusInternal(const float radius) {
         transitionManager.OnPropertyChange(this, AnimatableProperty::BorderRadius, radius);
 
         if (!transitionManager.HasActiveTransition(AnimatableProperty::BorderRadius)) {
@@ -181,13 +283,17 @@ namespace Lithos {
         return *this;
     }
 
+    Node& Node::SetBorderRadius(const float radius) {
+        return SetBorderRadiusInternal(radius);
+    }
+
     Node& Node::SetVisible(const bool visible) {
         this->visible = visible;
         MarkDirty();
         return *this;
     }
 
-    Node& Node::SetOpacity(const float opacity) {
+    Node& Node::SetOpacityInternal(const float opacity) {
         float clampedOpacity = std::clamp(opacity, 0.0f, 1.0f);
 
         // Try to start a transition
@@ -202,6 +308,10 @@ namespace Lithos {
         // If transition is active, Update() will apply interpolated values and mark dirty
 
         return *this;
+    }
+
+    Node& Node::SetOpacity(const float opacity) {
+        return SetOpacityInternal(opacity);
     }
 
     Node& Node::SetShadow(const float offsetX, const float offsetY, const float blur, const Color color) {
@@ -228,21 +338,73 @@ namespace Lithos {
 
         isLayouting = true;
 
+        // Calculate width and height
         if (style.width > 0) { bounds.width = style.width; }
         if (style.height > 0) { bounds.height = style.height; }
 
-        if (style.position == Position::Absolute) {
-            bounds.x = style.left;
-            bounds.y = style.top;
-        }
-        else {
-            if (parent) {
-                bounds.x = parent->bounds.x + style.left;
-                bounds.y = parent->bounds.y + style.top;
+        // Get parent dimensions for right/bottom calculations
+        float parentWidth = parent ? parent->bounds.width : 0;
+        float parentHeight = parent ? parent->bounds.height : 0;
+        float parentX = parent ? parent->bounds.x : 0;
+        float parentY = parent ? parent->bounds.y : 0;
+
+        // Handle horizontal positioning (left/right)
+        if (style.right != 0 && style.left == 0) {
+            // Only right specified - position from right edge
+            if (style.position == Position::Absolute) {
+                bounds.x = parentWidth - style.right - bounds.width;
             }
             else {
+                bounds.x = parentX + parentWidth - style.right - bounds.width;
+            }
+        }
+        else if (style.right != 0 && style.left != 0) {
+            // Both left and right specified - calculate width constraint
+            bounds.width = parentWidth - style.left - style.right;
+            if (style.position == Position::Absolute) {
                 bounds.x = style.left;
+            }
+            else {
+                bounds.x = parentX + style.left;
+            }
+        }
+        else {
+            // Only left specified (default behavior)
+            if (style.position == Position::Absolute) {
+                bounds.x = style.left;
+            }
+            else {
+                bounds.x = parentX + style.left;
+            }
+        }
+
+        // Handle vertical positioning (top/bottom)
+        if (style.bottom != 0 && style.top == 0) {
+            // Only bottom specified - position from bottom edge
+            if (style.position == Position::Absolute) {
+                bounds.y = parentHeight - style.bottom - bounds.height;
+            }
+            else {
+                bounds.y = parentY + parentHeight - style.bottom - bounds.height;
+            }
+        }
+        else if (style.bottom != 0 && style.top != 0) {
+            // Both top and bottom specified - calculate height constraint
+            bounds.height = parentHeight - style.top - style.bottom;
+            if (style.position == Position::Absolute) {
                 bounds.y = style.top;
+            }
+            else {
+                bounds.y = parentY + style.top;
+            }
+        }
+        else {
+            // Only top specified (default behavior)
+            if (style.position == Position::Absolute) {
+                bounds.y = style.top;
+            }
+            else {
+                bounds.y = parentY + style.top;
             }
         }
 
@@ -279,16 +441,15 @@ namespace Lithos {
             );
 
             if (contentBitmap) {
-                ID2D1Image* oldTarget = nullptr;
-                dc->GetTarget(&oldTarget);
+                ComPtr<ID2D1Image> oldTarget;
+                dc->GetTarget(oldTarget.GetAddressOf());
                 dc->SetTarget(contentBitmap);
-                //dc->BeginDraw();
                 dc->Clear(D2D1::ColorF(0, 0, 0, 0));
 
                 const float tempX = style.shadowBlur * 2;
                 const float tempY = style.shadowBlur * 2;
 
-                ID2D1SolidColorBrush* pBrush = nullptr;
+                ComPtr<ID2D1SolidColorBrush> pBrush;
                 dc->CreateSolidColorBrush(
                     D2D1::ColorF(
                         style.backgroundColor.r,
@@ -296,7 +457,7 @@ namespace Lithos {
                         style.backgroundColor.b,
                         style.backgroundColor.a * style.opacity
                     ),
-                    &pBrush
+                    pBrush.GetAddressOf()
                 );
 
                 if (pBrush) {
@@ -306,22 +467,20 @@ namespace Lithos {
                             style.borderRadius,
                             style.borderRadius
                         );
-                        dc->FillRoundedRectangle(roundedRect, pBrush);
+                        dc->FillRoundedRectangle(roundedRect, pBrush.Get());
                     }
                     else {
                         dc->FillRectangle(
                             D2D1::RectF(tempX, tempY, tempX + bounds.width, tempY + bounds.height),
-                            pBrush
+                            pBrush.Get()
                         );
                     }
-                    pBrush->Release();
                 }
 
-                //dc->EndDraw();
-                dc->SetTarget(oldTarget);
+                dc->SetTarget(oldTarget.Get());
 
-                ID2D1Effect* shadowEffect = nullptr;
-                dc->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
+                ComPtr<ID2D1Effect> shadowEffect;
+                dc->CreateEffect(CLSID_D2D1Shadow, shadowEffect.GetAddressOf());
 
                 if (shadowEffect) {
                     shadowEffect->SetInput(0, contentBitmap);
@@ -336,22 +495,20 @@ namespace Lithos {
                         )
                     );
 
-                    ID2D1Image* outputImage = nullptr;
-                    shadowEffect->GetOutput(&outputImage);
+                    ComPtr<ID2D1Image> outputImage;
+                    shadowEffect->GetOutput(outputImage.GetAddressOf());
 
-                    dc->DrawImage(
-                        outputImage,
-                        D2D1::Point2F(
-                            bounds.x + style.shadowOffsetX - style.shadowBlur * 2,
-                            bounds.y + style.shadowOffsetY - style.shadowBlur * 2
-                        )
-                    );
-
-                    if (outputImage) outputImage->Release();
-                    shadowEffect->Release();
+                    if (outputImage) {
+                        dc->DrawImage(
+                            outputImage.Get(),
+                            D2D1::Point2F(
+                                bounds.x + style.shadowOffsetX - style.shadowBlur * 2,
+                                bounds.y + style.shadowOffsetY - style.shadowBlur * 2
+                            )
+                        );
+                    }
                 }
 
-                if (oldTarget) oldTarget->Release();
                 contentBitmap->Release();
             }
         }
@@ -440,8 +597,72 @@ namespace Lithos {
     bool Node::HitTest(const float x, const float y) const { return visible && bounds.Contains(x, y); }
 
     void Node::MarkDirty() {
+        // Route to new system if differential rendering is enabled
+        if (windowPtr) {
+            auto* window = static_cast<Window*>(windowPtr);
+            if (window->GetRenderConfig().enableDifferentialRendering) {
+                RequestRepaint();
+                return;
+            }
+        }
+
+        // Fallback: old behavior
         isDirty = true;
         if (parent) { parent->MarkDirty(); }
+    }
+
+    void Node::RequestRepaint(int priority) {
+        if (!windowPtr) {
+            // Fallback to old system if no window
+            MarkDirty();
+            return;
+        }
+
+        Rect dirtyRect = bounds;
+
+        // Expand for transparency (requires parent background redraw)
+        if (style.opacity < 1.0f || style.backgroundColor.a < 1.0f) {
+            if (parent) {
+                dirtyRect = dirtyRect.BoundingBox(parent->bounds);
+            }
+        }
+
+        // Expand for shadow
+        if (style.shadowEnabled) {
+            const float expand = style.shadowBlur * 2.0f +
+                                std::abs(style.shadowOffsetX) +
+                                std::abs(style.shadowOffsetY);
+            dirtyRect = Rect(
+                dirtyRect.x - expand,
+                dirtyRect.y - expand,
+                dirtyRect.width + expand * 2.0f,
+                dirtyRect.height + expand * 2.0f
+            );
+        }
+
+        // Send to Window
+        auto* window = static_cast<Window*>(windowPtr);
+        window->AddDirtyRegion(dirtyRect, priority == -1 ? renderPriority : priority);
+    }
+
+    void Node::RequestRepaintRect(const Rect& localRect, int priority) {
+        if (!windowPtr) {
+            MarkDirty();
+            return;
+        }
+
+        // Convert local rect to window coordinates
+        Rect windowRect = localRect;
+        windowRect.x += bounds.x;
+        windowRect.y += bounds.y;
+
+        auto* window = static_cast<Window*>(windowPtr);
+        window->AddDirtyRegion(windowRect, priority == -1 ? renderPriority : priority);
+    }
+
+    Node& Node::SetRenderPriority(int priority) {
+        renderPriority = priority;
+        return *this;
     }
 
     void Node::RequestLayout() {

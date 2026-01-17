@@ -55,6 +55,24 @@ namespace Lithos {
         return *this;
     }
 
+    Container& Container::SetFlexWrap(const FlexWrap wrap) {
+        style.flexWrap = wrap;
+        RequestLayout();
+        return *this;
+    }
+
+    Container& Container::SetAlignContent(const AlignContent align) {
+        style.alignContent = align;
+        RequestLayout();
+        return *this;
+    }
+
+    Container& Container::SetFlexShrink(const float shrink) {
+        style.flexShrink = shrink;
+        RequestLayout();
+        return *this;
+    }
+
     Container& Container::AddContainer() {
         auto container = std::make_unique<Container>();
         Container& ref = *container;

@@ -40,14 +40,16 @@ namespace Lithos {
     ScrollableContainer& ScrollableContainer::SetScrollX(float x) {
         scrollX = x;
         ClampScroll();
-        MarkDirty();
+        // Optimization: only repaint viewport area for scroll operations
+        RequestRepaintRect(Rect(0, 0, bounds.width, bounds.height));
         return *this;
     }
 
     ScrollableContainer& ScrollableContainer::SetScrollY(float y) {
         scrollY = y;
         ClampScroll();
-        MarkDirty();
+        // Optimization: only repaint viewport area for scroll operations
+        RequestRepaintRect(Rect(0, 0, bounds.width, bounds.height));
         return *this;
     }
 
@@ -55,7 +57,8 @@ namespace Lithos {
         scrollX += dx;
         scrollY += dy;
         ClampScroll();
-        MarkDirty();
+        // Optimization: only repaint viewport area for scroll operations
+        RequestRepaintRect(Rect(0, 0, bounds.width, bounds.height));
         return *this;
     }
 

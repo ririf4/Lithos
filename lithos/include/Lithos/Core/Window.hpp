@@ -15,8 +15,7 @@
  */
 
 #pragma once
-#include <memory>
-#include <string>
+#include "Lithos/PCH.hpp"
 
 #include "Node.hpp"
 #include "Lithos/Layout/Container.hpp"
@@ -55,6 +54,27 @@ namespace Lithos {
      */
     class LITHOS_API Window {
         public:
+            /**
+             * @brief Rendering configuration options
+             */
+            struct RenderConfig {
+                bool enableDifferentialRendering = true;  ///< Enable differential rendering optimization
+                bool enableRegionMerging = true;          ///< Merge adjacent dirty regions
+                float maxMergeGap = 10.0f;                ///< Maximum gap between regions to merge (pixels)
+                float areaRatioThreshold = 1.5f;          ///< Maximum area ratio for merging (merged_area / combined_area)
+                int frameTimeBudgetMs = 16;               ///< Frame time budget in milliseconds (~60 FPS)
+            };
+
+            /**
+             * @brief Rendering statistics for debugging and profiling
+             */
+            struct RenderStats {
+                int dirtyRegionCount = 0;          ///< Number of dirty regions before merging
+                int mergedRegionCount = 0;         ///< Number of regions after merging
+                int skippedLowPriorityCount = 0;   ///< Number of low-priority regions skipped this frame
+                float lastFrameTimeMs = 0.0f;      ///< Last frame rendering time in milliseconds
+            };
+
             /**
              * @brief Constructs a window with specified dimensions and title
              * @param width Window width in pixels
@@ -98,8 +118,35 @@ namespace Lithos {
             void SetFocusedNode(Node* node);
             Node* GetFocusedNode();
 
+            /**
+             * @brief Sets rendering configuration
+             * @param config New rendering configuration
+             */
+            void SetRenderConfig(const RenderConfig& config);
+
+            /**
+             * @brief Gets current rendering configuration
+             * @return Current rendering configuration
+             */
+            RenderConfig GetRenderConfig() const;
+
+            /**
+             * @brief Gets rendering statistics from last frame
+             * @return Rendering statistics
+             */
+            RenderStats GetRenderStats() const;
+
         private:
             struct Impl;                    ///< Forward-declared implementation
             std::unique_ptr<Impl> pimpl;    ///< Pointer to implementation (Pimpl idiom)
+
+            /**
+             * @brief Internal method to add a dirty region (called by Node::RequestRepaint)
+             * @param rect Dirty rectangle in window coordinates
+             * @param priority Render priority
+             */
+            void AddDirtyRegion(const Rect& rect, int priority);
+
+            friend class Node;  ///< Allow Node to call AddDirtyRegion
     };
 }

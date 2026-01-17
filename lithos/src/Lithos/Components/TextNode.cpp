@@ -18,6 +18,47 @@
 #include <iostream>
 
 namespace Lithos {
+    // RAII helper for COM resource management
+    template<typename T>
+    class ComPtr {
+    public:
+        ComPtr() : ptr(nullptr) {}
+        explicit ComPtr(T* p) : ptr(p) {}
+
+        ~ComPtr() {
+            if (ptr) {
+                ptr->Release();
+                ptr = nullptr;
+            }
+        }
+
+        // Disable copy
+        ComPtr(const ComPtr&) = delete;
+        ComPtr& operator=(const ComPtr&) = delete;
+
+        // Enable move
+        ComPtr(ComPtr&& other) noexcept : ptr(other.ptr) {
+            other.ptr = nullptr;
+        }
+
+        ComPtr& operator=(ComPtr&& other) noexcept {
+            if (this != &other) {
+                if (ptr) ptr->Release();
+                ptr = other.ptr;
+                other.ptr = nullptr;
+            }
+            return *this;
+        }
+
+        T** GetAddressOf() { return &ptr; }
+        T* Get() const { return ptr; }
+        T* operator->() const { return ptr; }
+        explicit operator bool() const { return ptr != nullptr; }
+
+    private:
+        T* ptr;
+    };
+
     namespace {
         // Global DirectWrite factory (initialized once)
         IDWriteFactory* g_dwriteFactory = nullptr;
@@ -64,7 +105,7 @@ namespace Lithos {
           textFormat(nullptr),
           textLayout(nullptr),
           cachedTextBrush(nullptr),
-          cachedTextColor(Transparent),
+          cachedTextColor(Colors::Transparent),
           cachedTextWidth(0),
           cachedTextHeight(0) {}
 
@@ -76,7 +117,7 @@ namespace Lithos {
           textFormat(nullptr),
           textLayout(nullptr),
           cachedTextBrush(nullptr),
-          cachedTextColor(Transparent),
+          cachedTextColor(Colors::Transparent),
           cachedTextWidth(0),
           cachedTextHeight(0) {
         CreateTextFormat();
@@ -335,19 +376,16 @@ namespace Lithos {
     }
 
     void TextNode::Layout() {
-        // Update bounds from style first
-        if (style.width > 0) { bounds.width = style.width; }
-        if (style.height > 0) { bounds.height = style.height; }
-
         if (!textFormat) { CreateTextFormat(); }
 
         if (!textLayout || isDirty) { CreateTextLayout(); }
 
-        // If width/height not explicitly set, use text dimensions
+        // Let Node::Layout() handle position and size first
+        Node::Layout();
+
+        // Override width/height with text dimensions if not explicitly set
         if (style.width == 0) { bounds.width = cachedTextWidth; }
         if (style.height == 0) { bounds.height = cachedTextHeight; }
-
-        Node::Layout();
     }
 
     void TextNode::Draw(ID2D1DeviceContext* rt) {
@@ -373,15 +411,15 @@ namespace Lithos {
             );
 
             if (contentBitmap) {
-                ID2D1Image* oldTarget = nullptr;
-                rt->GetTarget(&oldTarget);
+                ComPtr<ID2D1Image> oldTarget;
+                rt->GetTarget(oldTarget.GetAddressOf());
                 rt->SetTarget(contentBitmap);
                 rt->Clear(D2D1::ColorF(0, 0, 0, 0));
 
                 const float tempX = style.shadowBlur * 2;
                 const float tempY = style.shadowBlur * 2;
 
-                ID2D1SolidColorBrush* pBrush = nullptr;
+                ComPtr<ID2D1SolidColorBrush> pBrush;
                 rt->CreateSolidColorBrush(
                     D2D1::ColorF(
                         style.backgroundColor.r,
@@ -389,7 +427,7 @@ namespace Lithos {
                         style.backgroundColor.b,
                         style.backgroundColor.a * style.opacity
                     ),
-                    &pBrush
+                    pBrush.GetAddressOf()
                 );
 
                 if (pBrush) {
@@ -399,21 +437,20 @@ namespace Lithos {
                             style.borderRadius,
                             style.borderRadius
                         );
-                        rt->FillRoundedRectangle(roundedRect, pBrush);
+                        rt->FillRoundedRectangle(roundedRect, pBrush.Get());
                     }
                     else {
                         rt->FillRectangle(
                             D2D1::RectF(tempX, tempY, tempX + bounds.width, tempY + bounds.height),
-                            pBrush
+                            pBrush.Get()
                         );
                     }
-                    pBrush->Release();
                 }
 
-                rt->SetTarget(oldTarget);
+                rt->SetTarget(oldTarget.Get());
 
-                ID2D1Effect* shadowEffect = nullptr;
-                rt->CreateEffect(CLSID_D2D1Shadow, &shadowEffect);
+                ComPtr<ID2D1Effect> shadowEffect;
+                rt->CreateEffect(CLSID_D2D1Shadow, shadowEffect.GetAddressOf());
 
                 if (shadowEffect) {
                     shadowEffect->SetInput(0, contentBitmap);
@@ -428,88 +465,90 @@ namespace Lithos {
                         )
                     );
 
-                    ID2D1Image* outputImage = nullptr;
-                    shadowEffect->GetOutput(&outputImage);
+                    ComPtr<ID2D1Image> outputImage;
+                    shadowEffect->GetOutput(outputImage.GetAddressOf());
 
-                    rt->DrawImage(
-                        outputImage,
-                        D2D1::Point2F(
-                            bounds.x + style.shadowOffsetX - style.shadowBlur * 2,
-                            bounds.y + style.shadowOffsetY - style.shadowBlur * 2
-                        )
-                    );
-
-                    if (outputImage) outputImage->Release();
-                    shadowEffect->Release();
+                    if (outputImage) {
+                        rt->DrawImage(
+                            outputImage.Get(),
+                            D2D1::Point2F(
+                                bounds.x + style.shadowOffsetX - style.shadowBlur * 2,
+                                bounds.y + style.shadowOffsetY - style.shadowBlur * 2
+                            )
+                        );
+                    }
                 }
 
-                if (oldTarget) oldTarget->Release();
                 contentBitmap->Release();
             }
         }
 
-        // Draw background
+        // Draw background using cached brush
         if (style.backgroundColor.a > 0) {
-            ID2D1SolidColorBrush* pBrush = nullptr;
-            rt->CreateSolidColorBrush(
-                D2D1::ColorF(
-                    style.backgroundColor.r,
-                    style.backgroundColor.g,
-                    style.backgroundColor.b,
-                    style.backgroundColor.a * style.opacity
-                ),
-                &pBrush
+            Color effectiveColor(
+                style.backgroundColor.r,
+                style.backgroundColor.g,
+                style.backgroundColor.b,
+                style.backgroundColor.a * style.opacity
             );
 
-            if (pBrush) {
+            ID2D1SolidColorBrush* brush = GetOrCreateBrush(
+                rt,
+                effectiveColor,
+                cachedBackgroundBrush,
+                cachedBackgroundColor
+            );
+
+            if (brush) {
                 if (style.borderRadius > 0) {
                     D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
                         D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
                         style.borderRadius,
                         style.borderRadius
                     );
-                    rt->FillRoundedRectangle(roundedRect, pBrush);
+                    rt->FillRoundedRectangle(roundedRect, brush);
                 }
                 else {
                     rt->FillRectangle(
                         D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
-                        pBrush
+                        brush
                     );
                 }
-                pBrush->Release();
             }
         }
 
-        // Draw border
+        // Draw border using cached brush
         if (style.borderWidth > 0 && style.borderColor.a > 0) {
-            ID2D1SolidColorBrush* pBrush = nullptr;
-            rt->CreateSolidColorBrush(
-                D2D1::ColorF(
-                    style.borderColor.r,
-                    style.borderColor.g,
-                    style.borderColor.b,
-                    style.borderColor.a * style.opacity
-                ),
-                &pBrush
+            Color effectiveColor(
+                style.borderColor.r,
+                style.borderColor.g,
+                style.borderColor.b,
+                style.borderColor.a * style.opacity
             );
 
-            if (pBrush) {
+            ID2D1SolidColorBrush* brush = GetOrCreateBrush(
+                rt,
+                effectiveColor,
+                cachedBorderBrush,
+                cachedBorderColor
+            );
+
+            if (brush) {
                 if (style.borderRadius > 0) {
                     D2D1_ROUNDED_RECT roundedRect = D2D1::RoundedRect(
                         D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
                         style.borderRadius,
                         style.borderRadius
                     );
-                    rt->DrawRoundedRectangle(roundedRect, pBrush, style.borderWidth);
+                    rt->DrawRoundedRectangle(roundedRect, brush, style.borderWidth);
                 }
                 else {
                     rt->DrawRectangle(
                         D2D1::RectF(bounds.x, bounds.y, bounds.x + bounds.width, bounds.y + bounds.height),
-                        pBrush,
+                        brush,
                         style.borderWidth
                     );
                 }
-                pBrush->Release();
             }
         }
 

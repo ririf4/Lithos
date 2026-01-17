@@ -59,6 +59,27 @@ namespace Lithos {
     };
 
     /**
+     * @brief Flex wrap behavior for multi-line layouts
+     */
+    enum class FlexWrap {
+        NoWrap,       ///< Single line (default behavior)
+        Wrap,         ///< Wrap to multiple lines
+        WrapReverse   ///< Wrap to multiple lines in reverse order
+    };
+
+    /**
+     * @brief Alignment of lines along the cross axis in multi-line flex layout
+     */
+    enum class AlignContent {
+        Start,         ///< Pack lines to start of cross axis
+        End,           ///< Pack lines to end of cross axis
+        Center,        ///< Pack lines to center of cross axis
+        SpaceBetween,  ///< Distribute lines with space between
+        SpaceAround,   ///< Distribute lines with space around
+        Stretch        ///< Stretch lines to fill container
+    };
+
+    /**
      * @brief Positioning type for nodes
      */
     enum class Position {
@@ -136,21 +157,24 @@ namespace Lithos {
         float marginLeft = 0;    ///< Left margin
 
         // ========== Flexbox Properties ==========
-        float gap = 0;   ///< Gap between flex children
-        float flex = 0;  ///< Flex grow factor (not fully implemented)
+        float gap = 0;               ///< Gap between flex children
+        float flex = 0;              ///< Flex grow factor (not fully implemented)
+        float flexShrink = 0;        ///< Flex shrink factor for item shrinking
+        FlexWrap flexWrap = FlexWrap::NoWrap;           ///< Flex wrap behavior
+        AlignContent alignContent = AlignContent::Start; ///< Multi-line cross-axis alignment
 
         // ========== Positioning Offsets ==========
         float left = 0;    ///< Left offset (for absolute/relative positioning)
         float top = 0;     ///< Top offset (for absolute/relative positioning)
-        float right = 0;   ///< Right offset (not yet implemented)
-        float bottom = 0;  ///< Bottom offset (not yet implemented)
+        float right = 0;   ///< Right offset (for right-edge positioning)
+        float bottom = 0;  ///< Bottom offset (for bottom-edge positioning)
 
         // ========== Visual Properties ==========
-        Color backgroundColor = Transparent;  ///< Background fill color
-        Color borderColor = Transparent;      ///< Border stroke color
-        float borderWidth = 0;                ///< Border thickness
-        float borderRadius = 0;               ///< Corner radius for rounded borders
-        float opacity = 1.0f;                 ///< Opacity (0.0 = transparent, 1.0 = opaque)
+        Color backgroundColor = Colors::Transparent;  ///< Background fill color
+        Color borderColor = Colors::Transparent;      ///< Border stroke color
+        float borderWidth = 0;                        ///< Border thickness
+        float borderRadius = 0;                       ///< Corner radius for rounded borders
+        float opacity = 1.0f;                         ///< Opacity (0.0 = transparent, 1.0 = opaque)
 
         // ========== Shadow Properties ==========
         bool shadowEnabled = false;              ///< Enable/disable shadow rendering
@@ -160,7 +184,7 @@ namespace Lithos {
         Color shadowColor = Color(0, 0, 0, 0.5f); ///< Shadow color
 
         // ========== Typography Properties ==========
-        Color textColor = Black;             ///< Text color
+        Color textColor = Colors::Black;     ///< Text color
         float fontSize = 16;                 ///< Font size in points
         std::string fontFamily = "Arial";    ///< Font family name
         FontWeight fontWeight = FontWeight::Normal;  ///< Font weight

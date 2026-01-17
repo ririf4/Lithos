@@ -158,6 +158,10 @@ namespace Lithos {
                 return node->style.left;
             case AnimatableProperty::Top:
                 return node->style.top;
+            case AnimatableProperty::Right:
+                return node->style.right;
+            case AnimatableProperty::Bottom:
+                return node->style.bottom;
             case AnimatableProperty::Position:
                 return std::make_pair(node->style.left, node->style.top);
 
@@ -233,6 +237,20 @@ namespace Lithos {
             case AnimatableProperty::Top:
                 if (const float* v = std::get_if<float>(&value)) {
                     node->style.top = *v;
+                    needsLayout = true;
+                }
+                break;
+
+            case AnimatableProperty::Right:
+                if (const float* v = std::get_if<float>(&value)) {
+                    node->style.right = *v;
+                    needsLayout = true;
+                }
+                break;
+
+            case AnimatableProperty::Bottom:
+                if (const float* v = std::get_if<float>(&value)) {
+                    node->style.bottom = *v;
                     needsLayout = true;
                 }
                 break;
@@ -410,6 +428,7 @@ namespace Lithos {
         if (needsLayout) {
             node->RequestLayout();
         } else {
+            // MarkDirty() automatically routes to RequestRepaint() when differential rendering is enabled
             node->MarkDirty();
         }
     }

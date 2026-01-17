@@ -16,9 +16,10 @@
 
 #include "Lithos/Core/Window.hpp"
 #include "Lithos/PCH.hpp"
-#include <iostream>
 #include <chrono>
 #include <thread>
+#include <algorithm>
+#include <cmath>
 #include "Lithos/Layout/Container.hpp"
 #include "Lithos/Core/Event.hpp"
 #include "Lithos/Core/Node.hpp"
@@ -77,6 +78,34 @@ namespace Lithos {
         // Animation support
         std::chrono::steady_clock::time_point lastFrameTime;
         bool needsAnimation;
+
+        // Rendering configuration and state
+        Window::RenderConfig renderConfig;
+        Window::RenderStats renderStats;
+
+        // Dirty region management
+        struct DirtyRegion {
+            Rect rect;
+            int priority;
+        };
+
+        struct DirtyRegionManager {
+            std::vector<DirtyRegion> dirtyRegions;
+            std::vector<DirtyRegion> deferredRegions;
+
+            void AddDirtyRegion(const Rect& rect, int priority) {
+                dirtyRegions.push_back({rect, priority});
+            }
+
+            void Clear() {
+                dirtyRegions.clear();
+            }
+
+            void MergeRegions(const Window::RenderConfig& config);
+            float CalculateGap(const Rect& a, const Rect& b) const;
+        };
+
+        DirtyRegionManager dirtyRegionManager;
 
         Impl()
             : hwnd(nullptr),
@@ -238,13 +267,87 @@ namespace Lithos {
             rootNode->OnEvent(evt);
         }
 
+        void RenderSubtree(Node* node, const Rect& clipRegion) {
+            if (!node || !node->IsVisible()) return;
+
+            // Early rejection: bounds check
+            if (!node->GetBounds().Intersects(clipRegion)) {
+                return;  // Skip entire subtree
+            }
+
+            node->Draw(pDeviceContext);
+
+            for (const auto& child : node->GetChildren()) {
+                RenderSubtree(child.get(), clipRegion);
+            }
+        }
+
         void OnPaint() {
             if (!pDeviceContext) return;
 
-            pDeviceContext->BeginDraw();
-            pDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
+            auto frameStartTime = std::chrono::steady_clock::now();
 
-            rootNode->Draw(pDeviceContext);
+            // Merge deferred regions from previous frame
+            for (const auto& deferred : dirtyRegionManager.deferredRegions) {
+                dirtyRegionManager.AddDirtyRegion(deferred.rect, deferred.priority);
+            }
+            dirtyRegionManager.deferredRegions.clear();
+
+            // Statistics: count regions before merging
+            renderStats.dirtyRegionCount = static_cast<int>(dirtyRegionManager.dirtyRegions.size());
+
+            // Merge dirty regions if enabled
+            if (renderConfig.enableRegionMerging && !dirtyRegionManager.dirtyRegions.empty()) {
+                dirtyRegionManager.MergeRegions(renderConfig);
+            }
+
+            renderStats.mergedRegionCount = static_cast<int>(dirtyRegionManager.dirtyRegions.size());
+
+            pDeviceContext->BeginDraw();
+
+            if (dirtyRegionManager.dirtyRegions.empty() || !renderConfig.enableDifferentialRendering) {
+                // Full redraw (fallback)
+                pDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
+                rootNode->Draw(pDeviceContext);
+            } else {
+                // Differential rendering
+                // Sort by priority (descending: high priority first)
+                std::sort(dirtyRegionManager.dirtyRegions.begin(),
+                         dirtyRegionManager.dirtyRegions.end(),
+                         [](const DirtyRegion& a, const DirtyRegion& b) {
+                             return a.priority > b.priority;
+                         });
+
+                renderStats.skippedLowPriorityCount = 0;
+
+                for (const auto& region : dirtyRegionManager.dirtyRegions) {
+                    // Check frame time budget
+                    auto elapsed = std::chrono::steady_clock::now() - frameStartTime;
+                    auto elapsedMs = std::chrono::duration<float, std::milli>(elapsed).count();
+
+                    if (elapsedMs > static_cast<float>(renderConfig.frameTimeBudgetMs) &&
+                        region.priority < static_cast<int>(RenderPriority::High)) {
+                        // Skip low-priority regions if budget exceeded
+                        dirtyRegionManager.deferredRegions.push_back(region);
+                        renderStats.skippedLowPriorityCount++;
+                        continue;
+                    }
+
+                    // Clear region
+                    pDeviceContext->PushAxisAlignedClip(
+                        D2D1::RectF(region.rect.Left(), region.rect.Top(),
+                                   region.rect.Right(), region.rect.Bottom()),
+                        D2D1_ANTIALIAS_MODE_PER_PRIMITIVE
+                    );
+
+                    pDeviceContext->Clear(D2D1::ColorF(D2D1::ColorF::White));
+
+                    // Render subtree with clipping
+                    RenderSubtree(rootNode.get(), region.rect);
+
+                    pDeviceContext->PopAxisAlignedClip();
+                }
+            }
 
             const HRESULT hr = pDeviceContext->EndDraw();
 
@@ -257,6 +360,14 @@ namespace Lithos {
             }
 
             pSwapChain->Present(1, 0);
+
+            // Clear dirty regions for next frame
+            dirtyRegionManager.Clear();
+
+            // Update frame time statistics
+            auto frameEndTime = std::chrono::steady_clock::now();
+            renderStats.lastFrameTimeMs = std::chrono::duration<float, std::milli>(
+                frameEndTime - frameStartTime).count();
         }
 
         void OnMouseEvent(UINT msg, WPARAM wParam, LPARAM lParam) {
@@ -540,5 +651,98 @@ namespace Lithos {
 
     Node* Window::GetFocusedNode() {
         return pimpl->focusedNode;
+    }
+
+    void Window::SetRenderConfig(const RenderConfig& config) {
+        pimpl->renderConfig = config;
+    }
+
+    Window::RenderConfig Window::GetRenderConfig() const {
+        return pimpl->renderConfig;
+    }
+
+    Window::RenderStats Window::GetRenderStats() const {
+        return pimpl->renderStats;
+    }
+
+    void Window::AddDirtyRegion(const Rect& rect, int priority) {
+        pimpl->dirtyRegionManager.AddDirtyRegion(rect, priority);
+        // Trigger repaint
+        InvalidateRect(pimpl->hwnd, nullptr, FALSE);
+    }
+
+    // ========== DirtyRegionManager Implementation ==========
+
+    void Window::Impl::DirtyRegionManager::MergeRegions(const Window::RenderConfig& config) {
+        if (dirtyRegions.size() < 2) return;
+
+        bool changed = true;
+        while (changed) {
+            changed = false;
+
+            for (size_t i = 0; i < dirtyRegions.size() && !changed; i++) {
+                for (size_t j = i + 1; j < dirtyRegions.size(); j++) {
+                    auto& regionA = dirtyRegions[i];
+                    auto& regionB = dirtyRegions[j];
+
+                    // Don't merge different priorities (affects rendering order)
+                    if (regionA.priority != regionB.priority) {
+                        continue;
+                    }
+
+                    // Check if regions overlap or are adjacent
+                    const float gap = CalculateGap(regionA.rect, regionB.rect);
+
+                    if (gap <= config.maxMergeGap) {
+                        // Check area ratio
+                        const Rect merged = regionA.rect.BoundingBox(regionB.rect);
+                        const float mergedArea = merged.Area();
+                        const float combinedArea = regionA.rect.Area() + regionB.rect.Area();
+
+                        const float ratio = mergedArea / combinedArea;
+
+                        if (ratio <= config.areaRatioThreshold) {
+                            // Merge: expand regionA and remove regionB
+                            regionA.rect = merged;
+                            dirtyRegions.erase(dirtyRegions.begin() + j);
+                            changed = true;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    float Window::Impl::DirtyRegionManager::CalculateGap(const Rect& a, const Rect& b) const {
+        // Check if rectangles overlap or touch
+        if (a.Intersects(b)) {
+            return 0.0f;
+        }
+
+        // Calculate horizontal gap
+        float hGap = 0.0f;
+        if (a.Right() < b.Left()) {
+            hGap = b.Left() - a.Right();
+        } else if (b.Right() < a.Left()) {
+            hGap = a.Left() - b.Right();
+        }
+
+        // Calculate vertical gap
+        float vGap = 0.0f;
+        if (a.Bottom() < b.Top()) {
+            vGap = b.Top() - a.Bottom();
+        } else if (b.Bottom() < a.Top()) {
+            vGap = a.Top() - b.Bottom();
+        }
+
+        // Return minimum distance
+        if (hGap > 0.0f && vGap > 0.0f) {
+            // Diagonal distance
+            return std::sqrt(hGap * hGap + vGap * vGap);
+        } else {
+            // Manhattan distance
+            return (std::max)(hGap, vGap);
+        }
     }
 }

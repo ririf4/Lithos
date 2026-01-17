@@ -96,6 +96,8 @@ namespace Lithos {
             /** @brief Sets font size for the label */
             Button& SetFontSize(float size);
 
+            Color GetCurrentColor() const;
+
             // ========== State Management ==========
 
             /** @brief Enables or disables the button */
@@ -150,6 +152,5 @@ namespace Lithos {
             ClickCallback clickCallback;
 
             void UpdateAppearance();
-            Color GetCurrentColor() const;
     };
 }

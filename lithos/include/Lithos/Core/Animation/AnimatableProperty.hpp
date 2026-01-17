@@ -30,6 +30,8 @@ namespace Lithos {
         // Position
         Left,           ///< X position (style.left)
         Top,            ///< Y position (style.top)
+        Right,          ///< Right offset (style.right)
+        Bottom,         ///< Bottom offset (style.bottom)
         Position,       ///< Both X and Y position
 
         // Size

@@ -109,6 +109,130 @@ namespace Lithos {
         /** @brief Gets the maximum line limit */
         int GetMaxLines() const { return maxLines; }
 
+        // ========== Node Method Overrides (Type-Safe Chaining) ==========
+        // Non-virtual function shadowing is intentional for performance and type safety
+
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4266)  // Suppress non-virtual function hiding warning
+#endif
+
+        /**
+         * @brief Sets position - returns TextNode& for type-safe chaining
+         * @param x X coordinate
+         * @param y Y coordinate
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetPosition(float x, float y) {
+            SetPositionInternal(x, y);
+            return *this;
+        }
+
+        /**
+         * @brief Sets right offset - returns TextNode& for type-safe chaining
+         * @param right Right offset
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetRight(float right) {
+            SetRightInternal(right);
+            return *this;
+        }
+
+        /**
+         * @brief Sets bottom offset - returns TextNode& for type-safe chaining
+         * @param bottom Bottom offset
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetBottom(float bottom) {
+            SetBottomInternal(bottom);
+            return *this;
+        }
+
+        /**
+         * @brief Sets size - returns TextNode& for type-safe chaining
+         * @param width Width
+         * @param height Height
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetSize(float width, float height) {
+            SetSizeInternal(width, height);
+            return *this;
+        }
+
+        /**
+         * @brief Sets width - returns TextNode& for type-safe chaining
+         * @param width Width
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetWidth(float width) {
+            SetWidthInternal(width);
+            return *this;
+        }
+
+        /**
+         * @brief Sets height - returns TextNode& for type-safe chaining
+         * @param height Height
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetHeight(float height) {
+            SetHeightInternal(height);
+            return *this;
+        }
+
+        /**
+         * @brief Sets background color - returns TextNode& for type-safe chaining
+         * @param color Background color
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetBackgroundColor(Color color) {
+            SetBackgroundColorInternal(color);
+            return *this;
+        }
+
+        /**
+         * @brief Sets border color - returns TextNode& for type-safe chaining
+         * @param color Border color
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetBorderColor(Color color) {
+            SetBorderColorInternal(color);
+            return *this;
+        }
+
+        /**
+         * @brief Sets border width - returns TextNode& for type-safe chaining
+         * @param width Border width
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetBorderWidth(float width) {
+            SetBorderWidthInternal(width);
+            return *this;
+        }
+
+        /**
+         * @brief Sets border radius - returns TextNode& for type-safe chaining
+         * @param radius Border radius
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetBorderRadius(float radius) {
+            SetBorderRadiusInternal(radius);
+            return *this;
+        }
+
+        /**
+         * @brief Sets opacity - returns TextNode& for type-safe chaining
+         * @param opacity Opacity (0.0-1.0)
+         * @return Reference to this TextNode for method chaining
+         */
+        TextNode& SetOpacity(float opacity) {
+            SetOpacityInternal(opacity);
+            return *this;
+        }
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
+
         /**
          * @brief Calculates text layout and updates bounds
          */

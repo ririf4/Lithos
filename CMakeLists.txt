@@ -67,25 +67,8 @@ if(MSVC)
 endif()
 
 # >==================== Example Application =================<
-project(LithosTestAndExample)
-
-add_executable(LithosTestAndExample
-        example/main.cpp
+add_executable(PositioningTest
+        example/positioning_test.cpp
 )
 
-add_executable(ToggleTest
-        example/toggle_test.cpp
-)
-
-add_executable(TransitionDemo WIN32
-        example/transition_demo.cpp
-)
-
-add_executable(TextInputTest
-        example/textinput_test.cpp
-)
-
-target_link_libraries(LithosTestAndExample PRIVATE Lithos)
-target_link_libraries(ToggleTest PRIVATE Lithos)
-target_link_libraries(TransitionDemo PRIVATE Lithos)
-target_link_libraries(TextInputTest PRIVATE Lithos)
+target_link_libraries(PositioningTest PRIVATE Lithos)

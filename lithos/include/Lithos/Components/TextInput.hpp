@@ -149,6 +149,16 @@ namespace Lithos {
             std::string fontFamily;
             float fontSize;
 
+            // Cached brushes for performance
+            mutable ID2D1SolidColorBrush* cachedTextBrush;
+            mutable Color cachedTextBrushColor;
+            mutable ID2D1SolidColorBrush* cachedPlaceholderBrush;
+            mutable Color cachedPlaceholderBrushColor;
+            mutable ID2D1SolidColorBrush* cachedCursorBrush;
+            mutable Color cachedCursorBrushColor;
+            mutable ID2D1SolidColorBrush* cachedSelectionBrush;
+            mutable Color cachedSelectionBrushColor;
+
             // Callback
             OnChangeCallback onChangeCallback;
 
@@ -193,5 +203,9 @@ namespace Lithos {
             size_t Utf8ByteIndexFromCharIndex(const std::string& str, size_t charIndex) const;
             std::wstring Utf8ToWString(const std::string& utf8) const;
             std::string WStringToUtf8(const std::wstring& wstr) const;
+
+            // UTF-8 to UTF-16 index conversion helpers
+            size_t Utf8CharIndexToUtf16Index(const std::string& utf8Str, size_t utf8CharIndex) const;
+            size_t Utf16IndexToUtf8CharIndex(const std::string& utf8Str, size_t utf16Index) const;
     };
 }

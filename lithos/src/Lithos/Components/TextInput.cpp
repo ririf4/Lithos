@@ -64,10 +64,18 @@ namespace Lithos {
           textLayout(nullptr),
           fontFamily("Segoe UI"),
           fontSize(14.0f),
-          onChangeCallback(nullptr) {
+          onChangeCallback(nullptr),
+          cachedTextBrush(nullptr),
+          cachedTextBrushColor(Colors::Transparent),
+          cachedPlaceholderBrush(nullptr),
+          cachedPlaceholderBrushColor(Colors::Transparent),
+          cachedCursorBrush(nullptr),
+          cachedCursorBrushColor(Colors::Transparent),
+          cachedSelectionBrush(nullptr),
+          cachedSelectionBrushColor(Colors::Transparent) {
 
         // Default styling
-        SetBackgroundColor(White);
+        SetBackgroundColor(Colors::White);
         SetBorderWidth(1);
         SetBorderColor(normalBorderColor);
         SetBorderRadius(4);
@@ -285,17 +293,23 @@ namespace Lithos {
             textFormat->Release();
             textFormat = nullptr;
         }
+
+        // Release cached brushes
+        SafeRelease(cachedTextBrush);
+        SafeRelease(cachedPlaceholderBrush);
+        SafeRelease(cachedCursorBrush);
+        SafeRelease(cachedSelectionBrush);
     }
 
     void TextInput::UpdateAppearance() {
         switch (state) {
             case TextInputState::Focused:
                 SetBorderColor(focusedBorderColor);
-                SetBackgroundColor(White);
+                SetBackgroundColor(Colors::White);
                 break;
             case TextInputState::Hover:
                 SetBorderColor(hoverBorderColor);
-                SetBackgroundColor(White);
+                SetBackgroundColor(Colors::White);
                 break;
             case TextInputState::Disabled:
                 SetBorderColor(normalBorderColor);
@@ -304,7 +318,7 @@ namespace Lithos {
             case TextInputState::Normal:
             default:
                 SetBorderColor(normalBorderColor);
-                SetBackgroundColor(White);
+                SetBackgroundColor(Colors::White);
                 break;
         }
         MarkDirty();
@@ -568,25 +582,36 @@ namespace Lithos {
             return;
         }
 
-        float cursorX = GetCursorXPosition();
+        // Calculate absolute cursor X position from text layout
+        float absoluteCursorX = 0;
+        if (textLayout) {
+            size_t utf16Index = Utf8CharIndexToUtf16Index(text, cursorPosition);
+            DWRITE_HIT_TEST_METRICS metrics;
+            float x, y;
+            textLayout->HitTestTextPosition(
+                static_cast<UINT32>(utf16Index),
+                false,
+                &x,
+                &y,
+                &metrics
+            );
+            absoluteCursorX = x;
+        }
+
         float viewportWidth = bounds.width - style.padding * 2;
 
-        // Get cursor position relative to scroll offset
-        float relativeCursorX = cursorX - bounds.x - style.padding;
-
+        // Ensure cursor is visible within the viewport
         // If cursor is to the right of viewport, scroll right
-        if (relativeCursorX > viewportWidth) {
-            scrollOffsetX += (relativeCursorX - viewportWidth);
+        if (absoluteCursorX - scrollOffsetX > viewportWidth) {
+            scrollOffsetX = absoluteCursorX - viewportWidth;
         }
         // If cursor is to the left of viewport, scroll left
-        else if (relativeCursorX < 0) {
-            scrollOffsetX += relativeCursorX;  // relativeCursorX is negative
+        else if (absoluteCursorX - scrollOffsetX < 0) {
+            scrollOffsetX = absoluteCursorX;
         }
 
         // Don't scroll past the beginning
-        if (scrollOffsetX < 0) {
-            scrollOffsetX = 0;
-        }
+        scrollOffsetX = std::max(0.0f, scrollOffsetX);
 
         MarkDirty();
     }
@@ -617,11 +642,14 @@ namespace Lithos {
     float TextInput::GetCursorXPosition() const {
         if (!textLayout) return bounds.x + style.padding - scrollOffsetX;
 
+        // Convert UTF-8 character index to UTF-16 index for DirectWrite
+        size_t utf16Index = Utf8CharIndexToUtf16Index(text, cursorPosition);
+
         DWRITE_HIT_TEST_METRICS metrics;
         float x, y;
 
         textLayout->HitTestTextPosition(
-            static_cast<UINT32>(cursorPosition),
+            static_cast<UINT32>(utf16Index),
             false,
             &x,
             &y,
@@ -639,10 +667,16 @@ namespace Lithos {
 
         if (start >= end) return;
 
+        // Convert UTF-8 character indices to UTF-16 indices for DirectWrite
+        size_t utf16Start = Utf8CharIndexToUtf16Index(text, start);
+        size_t utf16End = Utf8CharIndexToUtf16Index(text, end);
+
+        if (utf16Start >= utf16End) return;
+
         UINT32 actualHitTestCount = 0;
         textLayout->HitTestTextRange(
-            static_cast<UINT32>(start),
-            static_cast<UINT32>(end - start),
+            static_cast<UINT32>(utf16Start),
+            static_cast<UINT32>(utf16End - utf16Start),
             bounds.x + style.padding - scrollOffsetX,
             bounds.y + style.padding,
             nullptr,
@@ -654,8 +688,8 @@ namespace Lithos {
 
         std::vector<DWRITE_HIT_TEST_METRICS> hitTestMetrics(actualHitTestCount);
         textLayout->HitTestTextRange(
-            static_cast<UINT32>(start),
-            static_cast<UINT32>(end - start),
+            static_cast<UINT32>(utf16Start),
+            static_cast<UINT32>(utf16End - utf16Start),
             bounds.x + style.padding - scrollOffsetX,
             bounds.y + style.padding,
             hitTestMetrics.data(),
@@ -663,10 +697,11 @@ namespace Lithos {
             &actualHitTestCount
         );
 
-        ID2D1SolidColorBrush* selectionBrush = nullptr;
-        rt->CreateSolidColorBrush(
-            D2D1::ColorF(selectionColor.r, selectionColor.g, selectionColor.b, selectionColor.a),
-            &selectionBrush
+        ID2D1SolidColorBrush* selectionBrush = GetOrCreateBrush(
+            rt,
+            selectionColor,
+            cachedSelectionBrush,
+            cachedSelectionBrushColor
         );
 
         if (selectionBrush) {
@@ -679,7 +714,6 @@ namespace Lithos {
                 );
                 rt->FillRectangle(rect, selectionBrush);
             }
-            selectionBrush->Release();
         }
     }
 
@@ -704,10 +738,12 @@ namespace Lithos {
         float cursorY = bounds.y + style.padding + y;
         float lineHeight = hitMetrics.height;
 
-        ID2D1SolidColorBrush* cursorBrush = nullptr;
-        rt->CreateSolidColorBrush(
-            D2D1::ColorF(textColor.r, textColor.g, textColor.b),
-            &cursorBrush
+        Color cursorColor(textColor.r, textColor.g, textColor.b, 1.0f);
+        ID2D1SolidColorBrush* cursorBrush = GetOrCreateBrush(
+            rt,
+            cursorColor,
+            cachedCursorBrush,
+            cachedCursorBrushColor
         );
 
         if (cursorBrush) {
@@ -717,22 +753,21 @@ namespace Lithos {
                 cursorBrush,
                 1.5f
             );
-            cursorBrush->Release();
         }
     }
 
     void TextInput::DrawText(ID2D1DeviceContext* rt) {
         if (!textLayout) return;
 
-        ID2D1SolidColorBrush* brush = nullptr;
-
         if (text.empty() && !placeholderText.empty()) {
-            // Draw placeholder
+            // Draw placeholder using cached brush
             std::wstring wPlaceholder = Utf8ToWString(placeholderText);
 
-            rt->CreateSolidColorBrush(
-                D2D1::ColorF(placeholderColor.r, placeholderColor.g, placeholderColor.b, placeholderColor.a),
-                &brush
+            ID2D1SolidColorBrush* brush = GetOrCreateBrush(
+                rt,
+                placeholderColor,
+                cachedPlaceholderBrush,
+                cachedPlaceholderBrushColor
             );
 
             if (brush && textFormat) {
@@ -748,13 +783,14 @@ namespace Lithos {
                     ),
                     brush
                 );
-                brush->Release();
             }
         } else {
-            // Draw actual text with scroll offset
-            rt->CreateSolidColorBrush(
-                D2D1::ColorF(textColor.r, textColor.g, textColor.b, textColor.a),
-                &brush
+            // Draw actual text with scroll offset using cached brush
+            ID2D1SolidColorBrush* brush = GetOrCreateBrush(
+                rt,
+                textColor,
+                cachedTextBrush,
+                cachedTextBrushColor
             );
 
             if (brush) {
@@ -763,7 +799,6 @@ namespace Lithos {
                     textLayout,
                     brush
                 );
-                brush->Release();
             }
         }
     }
@@ -785,12 +820,16 @@ namespace Lithos {
             &metrics
         );
 
-        size_t index = metrics.textPosition;
+        // metrics.textPosition is a UTF-16 index, convert to UTF-8 character index
+        size_t utf16Index = metrics.textPosition;
         if (isTrailingHit) {
-            index += metrics.length;
+            utf16Index += metrics.length;
         }
 
-        return std::min(index, Utf8Length(text));
+        // Convert UTF-16 index to UTF-8 character index
+        size_t utf8CharIndex = Utf16IndexToUtf8CharIndex(text, utf16Index);
+
+        return std::min(utf8CharIndex, Utf8Length(text));
     }
 
     // ========== Layout and Drawing ==========
@@ -938,13 +977,14 @@ namespace Lithos {
 
             switch (event.key) {
                 case VK_RETURN:  // Enter key
-                    if (isMultiLine && shiftPressed) {
-                        // Shift+Enter inserts a newline in multiline mode
+                    if (isMultiLine) {
+                        // In multiline mode, insert newline (Shift+Enter not required)
                         InsertCharacter(L'\n');
                         return true;
                     }
-                    // Otherwise, do nothing (could be used for form submission in the future)
-                    return true;
+                    // In single-line mode, don't handle Enter - let it propagate
+                    // (useful for form submission, etc.)
+                    return false;
                 case VK_LEFT:
                     MoveCursor(-1, shiftPressed);
                     return true;
@@ -1007,17 +1047,28 @@ namespace Lithos {
         size_t len = 0;
         for (size_t i = 0; i < str.length(); ) {
             unsigned char c = str[i];
+            size_t charSize = 1;
+
             if (c < 0x80) {
-                i += 1;
+                charSize = 1;
             } else if ((c & 0xE0) == 0xC0) {
-                i += 2;
+                charSize = 2;
             } else if ((c & 0xF0) == 0xE0) {
-                i += 3;
+                charSize = 3;
             } else if ((c & 0xF8) == 0xF0) {
-                i += 4;
+                charSize = 4;
             } else {
-                i += 1;
+                // Invalid UTF-8 sequence, treat as single byte
+                charSize = 1;
             }
+
+            // Boundary check: ensure we don't go past string end
+            if (i + charSize > str.length()) {
+                // Incomplete multibyte sequence at end of string
+                break;
+            }
+
+            i += charSize;
             len++;
         }
         return len;
@@ -1029,34 +1080,58 @@ namespace Lithos {
 
         while (byteIndex < str.length() && currentChar < charIndex) {
             unsigned char c = str[byteIndex];
+            size_t charSize = 1;
+
             if (c < 0x80) {
-                byteIndex += 1;
+                charSize = 1;
             } else if ((c & 0xE0) == 0xC0) {
-                byteIndex += 2;
+                charSize = 2;
             } else if ((c & 0xF0) == 0xE0) {
-                byteIndex += 3;
+                charSize = 3;
             } else if ((c & 0xF8) == 0xF0) {
-                byteIndex += 4;
+                charSize = 4;
             } else {
-                byteIndex += 1;
+                // Invalid UTF-8 sequence
+                charSize = 1;
             }
+
+            // Boundary check: ensure we don't go past string end
+            if (byteIndex + charSize > str.length()) {
+                // Incomplete multibyte sequence at end of string
+                break;
+            }
+
+            byteIndex += charSize;
             currentChar++;
         }
 
-        return byteIndex;
+        return std::min(byteIndex, str.length());
     }
 
     std::wstring TextInput::Utf8ToWString(const std::string& utf8) const {
         if (utf8.empty()) return L"";
 
-        int size = MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, nullptr, 0);
-        std::wstring result(size, 0);
-        MultiByteToWideChar(CP_UTF8, 0, utf8.c_str(), -1, &result[0], size);
+        // Use explicit size instead of -1 to avoid null terminator issues
+        const int size = MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            utf8.data(),
+            static_cast<int>(utf8.size()),
+            nullptr,
+            0
+        );
 
-        // Remove null terminator
-        if (!result.empty() && result.back() == L'\0') {
-            result.pop_back();
-        }
+        if (size <= 0) return L"";
+
+        std::wstring result(size, 0);
+        MultiByteToWideChar(
+            CP_UTF8,
+            0,
+            utf8.data(),
+            static_cast<int>(utf8.size()),
+            result.data(),
+            size
+        );
 
         return result;
     }
@@ -1064,15 +1139,60 @@ namespace Lithos {
     std::string TextInput::WStringToUtf8(const std::wstring& wstr) const {
         if (wstr.empty()) return "";
 
-        int size = WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, nullptr, 0, nullptr, nullptr);
-        std::string result(size, 0);
-        WideCharToMultiByte(CP_UTF8, 0, wstr.c_str(), -1, &result[0], size, nullptr, nullptr);
+        // Use explicit size instead of -1 to avoid null terminator issues
+        const int size = WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wstr.data(),
+            static_cast<int>(wstr.size()),
+            nullptr,
+            0,
+            nullptr,
+            nullptr
+        );
 
-        // Remove null terminator
-        if (!result.empty() && result.back() == '\0') {
-            result.pop_back();
-        }
+        if (size <= 0) return "";
+
+        std::string result(size, 0);
+        WideCharToMultiByte(
+            CP_UTF8,
+            0,
+            wstr.data(),
+            static_cast<int>(wstr.size()),
+            result.data(),
+            size,
+            nullptr,
+            nullptr
+        );
 
         return result;
+    }
+
+    // ========== UTF-8 to UTF-16 Index Conversion ==========
+
+    size_t TextInput::Utf8CharIndexToUtf16Index(const std::string& utf8Str, size_t utf8CharIndex) const {
+        // Convert UTF-8 string to UTF-16
+        std::wstring wstr = Utf8ToWString(utf8Str);
+
+        // Count UTF-16 code units up to the UTF-8 character index
+        size_t byteIndex = Utf8ByteIndexFromCharIndex(utf8Str, utf8CharIndex);
+        std::string utf8Prefix = utf8Str.substr(0, byteIndex);
+        std::wstring wstrPrefix = Utf8ToWString(utf8Prefix);
+
+        return wstrPrefix.length();
+    }
+
+    size_t TextInput::Utf16IndexToUtf8CharIndex(const std::string& utf8Str, size_t utf16Index) const {
+        // Convert UTF-8 string to UTF-16
+        std::wstring wstr = Utf8ToWString(utf8Str);
+
+        // Clamp UTF-16 index to valid range
+        utf16Index = std::min(utf16Index, wstr.length());
+
+        // Convert back the prefix to UTF-8 and count characters
+        std::wstring wstrPrefix = wstr.substr(0, utf16Index);
+        std::string utf8Prefix = WStringToUtf8(wstrPrefix);
+
+        return Utf8Length(utf8Prefix);
     }
 }

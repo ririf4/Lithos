@@ -29,7 +29,7 @@ namespace Lithos {
           hoverColor(Color(0.3f, 0.5f, 0.9f)),       // Light Blue
           pressedColor(Color(0.15f, 0.3f, 0.6f)),    // Dark Blue
           disabledColor(Color(0.7f, 0.7f, 0.7f)),    // Gray
-          textColor(White),
+          textColor(Colors::White),
           fontSize(16.0f),
           clickCallback(nullptr) {
         SetBackgroundColor(normalColor);
