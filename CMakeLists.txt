@@ -1,59 +1,40 @@
-cmake_minimum_required(VERSION 3.15)
-project(Lithos)
+cmake_minimum_required(VERSION 4.1)
+project(Lithos VERSION 0.0.1 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_library(Lithos SHARED
         lithos/include/Lithos/PCH.hpp
+        lithos/src/Lithos/PCH.cpp
 
-        # HPP Header Files
+        # Header Files
         lithos/include/Lithos/Core/Window.hpp
-        lithos/include/Lithos/Core/Node.hpp
+        lithos/include/Lithos/Core/Element.hpp
+
         lithos/include/Lithos/Core/Color.hpp
-        lithos/include/Lithos/Core/Rect.hpp
-        lithos/include/Lithos/Core/Event.hpp
-        lithos/include/Lithos/Core/Style.hpp
 
-        lithos/include/Lithos/Core/Animation/Easing.hpp
-        lithos/include/Lithos/Core/Animation/AnimatableProperty.hpp
-        lithos/include/Lithos/Core/Animation/Transition.hpp
-
-        lithos/include/Lithos/Layout/Container.hpp
-        lithos/include/Lithos/Layout/ScrollableContainer.hpp
-
-        lithos/include/Lithos/Components/TextNode.hpp
-        lithos/include/Lithos/Components/Button.hpp
-        lithos/include/Lithos/Components/ToggleButton.hpp
-        lithos/include/Lithos/Components/Image.hpp
-        lithos/include/Lithos/Components/TextInput.hpp
-
-        # CPP Source Files
+        # Source Files
         lithos/src/Lithos/Core/Window.cpp
-        lithos/src/Lithos/Core/Node.cpp
-
-        lithos/src/Lithos/Core/Animation/Transition.cpp
-
-        lithos/src/Lithos/Layout/Container.cpp
-        lithos/src/Lithos/Layout/ScrollableContainer.cpp
-
-        lithos/src/Lithos/Components/TextNode.cpp
-        lithos/src/Lithos/Components/Button.cpp
-        lithos/src/Lithos/Components/ToggleButton.cpp
-        lithos/src/Lithos/Components/Image.cpp
-        lithos/src/Lithos/Components/TextInput.cpp
 )
 
+target_precompile_headers(Lithos PRIVATE lithos/include/Lithos/PCH.hpp)
+
 target_link_libraries(Lithos PRIVATE
-        d2d1.lib
-        d3d11.lib
-        dxgi.lib
-        dxguid.lib
-        dwrite.lib
-        imm32.lib
-        user32.lib
-        gdi32.lib
-        shell32.lib
-        windowscodecs.lib
+        # --- [Graphics & Rendering] ---
+        d2d1.lib            # Direct2D: 2Dグラフィックス描画の本体
+        d3d11.lib           # Direct3D: ハードウェア加速・GPU操作の基盤
+        dxgi.lib            # DXGI: 画面出力（スワップチェーン）やビデオカード管理
+        dwrite.lib          # DirectWrite: 高品質なテキストレンダリングとフォント管理
+
+        # --- [Windows OS Core & UI] ---
+        user32.lib          # ウィンドウの作成、メッセージループ、マウス・キーボード入力
+        imm32.lib           # IME (Input Method Editor): 日本語入力などの制御
+
+        # --- [System Utilities & Resources] ---
+        dxguid.lib          # DirectXのインターフェースID (GUID) 定義集
+        shell32.lib         # Windowsシェル: ファイル操作、ドラッグ&ドロップ、通知など
+        windowscodecs.lib   # WIC (Windows Imaging Component): PNG/JPEGなどの画像デコード
 )
 
 target_include_directories(Lithos PUBLIC lithos/include)
@@ -63,12 +44,10 @@ add_compile_definitions(UNICODE _UNICODE)
 target_compile_definitions(Lithos PRIVATE LITHOS_EXPORTS)
 
 if(MSVC)
-    target_compile_options(Lithos PRIVATE /utf-8)
+    target_compile_options(Lithos PRIVATE /utf-8 /MP /W4 /WX)
+else()
+    target_compile_options(Lithos PRIVATE -Wall -Wextra -Werror)
 endif()
 
 # >==================== Example Application =================<
-add_executable(PositioningTest
-        example/positioning_test.cpp
-)
 
-target_link_libraries(PositioningTest PRIVATE Lithos)
