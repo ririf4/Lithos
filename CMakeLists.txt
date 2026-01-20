@@ -11,6 +11,7 @@ add_library(Lithos SHARED
         # Header Files
         lithos/include/Lithos/Core/Window.hpp
         lithos/include/Lithos/Core/Element.hpp
+        lithos/include/Lithos/Core/Event.hpp
 
         lithos/include/Lithos/Core/Color.hpp
 

@@ -26,6 +26,7 @@
 
 namespace Lithos {
     class Window;
+    class MouseEvent;
 
     class LITHOS_API Element {
         public:
@@ -36,6 +37,8 @@ namespace Lithos {
             Element& operator=(const Element&) = delete;
             Element(Element&&) = default;
             Element& operator=(Element&&) = default;
+
+            virtual bool OnMouseEvent(MouseEvent evt);
 
         protected:
             Window* windowPtr;
