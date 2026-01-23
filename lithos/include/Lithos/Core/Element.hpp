@@ -17,6 +17,7 @@
 #pragma once
 #include "../PCH.hpp"
 #include "Color.hpp"
+#include "Geometry.hpp"
 
 #ifdef LITHOS_EXPORTS
     #define LITHOS_API __declspec(dllexport)
@@ -38,7 +39,16 @@ namespace Lithos {
             Element(Element&&) = default;
             Element& operator=(Element&&) = default;
 
+            void AddChild(std::unique_ptr<Element> child);
+
             virtual bool OnMouseEvent(MouseEvent evt);
+
+            virtual void Draw(ID2D1DeviceContext* rt);
+            bool HitTest(float x, float y) const;
+
+            // Getters
+            float getX() const { return x; }
+            float getY() const { return y; }
 
         protected:
             Window* windowPtr;
@@ -46,11 +56,15 @@ namespace Lithos {
             std::weak_ptr<Element> parent;
             std::vector<std::shared_ptr<Element>> children;
 
+            std::unique_ptr<Geometry> geometry;
+
             // Performance optimization: cached brushes
             mutable ComPtr<ID2D1SolidColorBrush> cachedBackgroundBrush;  ///< Cached background brush
             mutable Color cachedBackgroundColor;                         ///< Cached background color
             mutable ComPtr<ID2D1SolidColorBrush> cachedBorderBrush;      ///< Cached border brush
             mutable Color cachedBorderColor;                             ///< Cached border color
+
+            float x, y;
 
             bool visible = true;
     };

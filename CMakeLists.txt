@@ -9,13 +9,16 @@ add_library(Lithos SHARED
         lithos/src/Lithos/PCH.cpp
 
         # Header Files
+        lithos/include/Lithos/Core/Color.hpp
+        lithos/include/Lithos/Core/Event.hpp
+        lithos/include/Lithos/Core/Geometry.hpp
+
         lithos/include/Lithos/Core/Window.hpp
         lithos/include/Lithos/Core/Element.hpp
-        lithos/include/Lithos/Core/Event.hpp
-
-        lithos/include/Lithos/Core/Color.hpp
 
         # Source Files
+        lithos/src/Lithos/Core/Geometry.cpp
+
         lithos/src/Lithos/Core/Window.cpp
 )
 
