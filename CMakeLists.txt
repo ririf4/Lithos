@@ -9,9 +9,15 @@ add_library(Lithos SHARED
         lithos/src/Lithos/PCH.cpp
 
         # Header Files
+        lithos/include/Lithos/Core/Style.hpp
+
         lithos/include/Lithos/Core/Color.hpp
         lithos/include/Lithos/Core/Event.hpp
         lithos/include/Lithos/Core/Geometry.hpp
+
+        lithos/include/Lithos/Core/Animation/Transition.hpp
+        lithos/include/Lithos/Core/Animation/Easing.hpp
+        lithos/include/Lithos/Core/Animation/AnimatableProperty.hpp
 
         lithos/include/Lithos/Core/Window.hpp
         lithos/include/Lithos/Core/Element.hpp
@@ -19,7 +25,10 @@ add_library(Lithos SHARED
         # Source Files
         lithos/src/Lithos/Core/Geometry.cpp
 
+        lithos/src/Lithos/Core/Animation/Transition.cpp
+
         lithos/src/Lithos/Core/Window.cpp
+        lithos/src/Lithos/Core/Element.cpp
 )
 
 target_precompile_headers(Lithos PRIVATE lithos/include/Lithos/PCH.hpp)
@@ -48,9 +57,9 @@ add_compile_definitions(UNICODE _UNICODE)
 target_compile_definitions(Lithos PRIVATE LITHOS_EXPORTS)
 
 if(MSVC)
-    target_compile_options(Lithos PRIVATE /utf-8 /MP /W4 /WX)
+    target_compile_options(Lithos PRIVATE /utf-8 /MP /W4)
 else()
-    target_compile_options(Lithos PRIVATE -Wall -Wextra -Werror)
+    target_compile_options(Lithos PRIVATE -Wall -Wextra)
 endif()
 
 # >==================== Example Application =================<

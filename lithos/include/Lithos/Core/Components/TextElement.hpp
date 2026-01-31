@@ -1,0 +1,8 @@
+//
+// Created by main on 2026/01/29.
+//
+
+#ifndef LITHOS_TEXTELEMENT_HPP
+#define LITHOS_TEXTELEMENT_HPP
+
+#endif //LITHOS_TEXTELEMENT_HPP

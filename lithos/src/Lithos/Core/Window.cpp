@@ -332,4 +332,21 @@ namespace Lithos {
     }
 
     Window::~Window() = default;
+
+    Element& Window::GetRoot() {
+        return *pimpl->rootElement;
+    }
+
+    void Window::Show() const {
+        ShowWindow(pimpl->hwnd, SW_SHOW);
+        UpdateWindow(pimpl->hwnd);
+    }
+
+    void Window::Run() {
+        MSG msg = {};
+        while (GetMessage(&msg, nullptr, 0, 0)) {
+            TranslateMessage(&msg);
+            DispatchMessage(&msg);
+        }
+    }
 }

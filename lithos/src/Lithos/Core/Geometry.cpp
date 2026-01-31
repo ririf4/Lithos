@@ -14,17 +14,18 @@
     limitations under the License.
  */
 #include "Lithos/Core/Geometry.hpp"
+#include <numbers>
 
 namespace Lithos {
     // ========== RectGeometry ==========
-    RectGeometry::RectGeometry(float x, float y, float w, float h)
+    RectGeometry::RectGeometry(const float x, const float y, const float w, const float h)
         : x(x), y(y), width(w), height(h) {}
 
-    bool RectGeometry::ContainsPointFast(float px, float py) const {
+    bool RectGeometry::ContainsPointFast(const float px, const float py) const {
         return px >= x && px <= x + width && py >= y && py <= y + height;
     }
 
-    bool RectGeometry::ContainsPoint(float px, float py) const {
+    bool RectGeometry::ContainsPoint(const float px, const float py) const {
         return ContainsPointFast(px, py); // Same for rectangles
     }
 
@@ -51,7 +52,7 @@ namespace Lithos {
         return cachedGeometry.Get();
     }
 
-    void RectGeometry::Update(float newX, float newY, float newWidth, float newHeight) {
+    void RectGeometry::Update(const float newX, const float newY, const float newWidth, const float newHeight) {
         x = newX;
         y = newY;
         width = newWidth;
@@ -67,21 +68,19 @@ namespace Lithos {
         float ol, ot, or_, ob;
         other.GetBounds(ol, ot, or_, ob);
 
-        return !(x + width < ol || or_ < x ||
-                 y + height < ot || ob < y);
+        return !(x + width < ol || or_ < x || y + height < ot || ob < y);
     }
 
     // ========== CircleGeometry ==========
-    CircleGeometry::CircleGeometry(float cx, float cy, float r)
+    CircleGeometry::CircleGeometry(const float cx, const float cy, const float r)
         : centerX(cx), centerY(cy), radius(r) {}
 
-    bool CircleGeometry::ContainsPointFast(float px, float py) const {
+    bool CircleGeometry::ContainsPointFast(const float px, const float py) const {
         // Bounding box check
-        return px >= centerX - radius && px <= centerX + radius &&
-               py >= centerY - radius && py <= centerY + radius;
+        return px >= centerX - radius && px <= centerX + radius && py >= centerY - radius && py <= centerY + radius;
     }
 
-    bool CircleGeometry::ContainsPoint(float px, float py) const {
+    bool CircleGeometry::ContainsPoint(const float px, const float py) const {
         const float dx = px - centerX;
         const float dy = py - centerY;
         return (dx * dx + dy * dy) <= (radius * radius);
@@ -110,20 +109,20 @@ namespace Lithos {
         return cachedGeometry.Get();
     }
 
-    void CircleGeometry::Update(float x, float y, float w, float h) {
+    void CircleGeometry::Update(const float x, const float y, const float w, const float h) {
         centerX = x + w / 2.0f;
         centerY = y + h / 2.0f;
         radius = std::min(w, h) / 2.0f;
         cachedGeometry->Release();
     }
 
-    void CircleGeometry::SetRadius(float r) {
+    void CircleGeometry::SetRadius(const float r) {
         radius = r;
         cachedGeometry->Release();
     }
 
     float CircleGeometry::Area() const {
-        return 3.14159265359f * radius * radius;
+        return std::numbers::pi_v<float> * radius * radius;
     }
 
     bool CircleGeometry::Intersects(const Geometry& other) const {
@@ -131,10 +130,10 @@ namespace Lithos {
         float ol, ot, or_, ob;
         other.GetBounds(ol, ot, or_, ob);
 
-        float left = centerX - radius;
-        float top = centerY - radius;
-        float right = centerX + radius;
-        float bottom = centerY + radius;
+        const float left = centerX - radius;
+        const float top = centerY - radius;
+        const float right = centerX + radius;
+        const float bottom = centerY + radius;
 
         return !(right < ol || or_ < left || bottom < ot || ob < top);
     }
